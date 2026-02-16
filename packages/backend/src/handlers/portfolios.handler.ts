@@ -4,7 +4,7 @@
 
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { PortfolioRepository, PositionRepository } from '../repositories/index.js';
-import { createApiResponse, parseBody, getUserId } from '../utils/api.utils.js';
+import { createApiResponse, parseBody, getUserId, errorResponse } from '../utils/api.utils.js';
 import {
   createPortfolioSchema,
   updatePortfolioSchema,
@@ -27,9 +27,7 @@ export async function listPortfolios(
     return createApiResponse(200, { portfolios });
   } catch (error) {
     logger.error('List portfolios error', error);
-    return createApiResponse(500, {
-      error: 'Failed to list portfolios',
-    });
+    return errorResponse(error);
   }
 }
 

@@ -26,7 +26,7 @@ export class StockRepository {
 
     const result = await query<any>(
       `SELECT * FROM stocks
-       WHERE symbol ILIKE $1 OR name ILIKE $1
+       WHERE (symbol ILIKE $1 OR name ILIKE $1)
        AND tradable = true
        ORDER BY
          CASE
