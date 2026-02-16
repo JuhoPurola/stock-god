@@ -1,0 +1,26 @@
+{
+  "name": "@stock-picker/infrastructure",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "deploy:staging": "cdk deploy --all --require-approval never --context environment=staging",
+    "deploy:prod": "cdk deploy --all --require-approval never --context environment=production",
+    "destroy:staging": "cdk destroy --all --context environment=staging",
+    "destroy:prod": "cdk destroy --all --context environment=production",
+    "synth": "cdk synth",
+    "diff": "cdk diff"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.120.0",
+    "constructs": "^10.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "aws-cdk": "^2.120.0",
+    "esbuild": "^0.27.3",
+    "typescript": "^5.3.3"
+  }
+}
