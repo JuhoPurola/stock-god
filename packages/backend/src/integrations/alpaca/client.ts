@@ -8,6 +8,7 @@ import { logger } from '../../utils/logger.js';
 import { ExternalServiceError } from '../../utils/errors.js';
 import type { OrderSide } from '@stock-picker/shared';
 import { OrderStatus } from '@stock-picker/shared';
+import { rateLimiterService } from '../../services/rate-limiter.service.js';
 
 // Alpaca credentials interface
 interface AlpacaCredentials {
@@ -267,8 +268,22 @@ export class AlpacaClient {
    * Get account information
    */
   async getAccount(): Promise<AlpacaAccount> {
-    const response = await this.client.get<AlpacaAccount>('/v2/account');
-    return response.data;
+    await this.initialize();
+
+    if (this.isDemoMode) {
+      throw new Error('Account information not available in demo mode');
+    }
+
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      const response = await this.client.get<AlpacaAccount>('/v2/account');
+      await rateLimiterService.recordRequest('alpaca', '/v2/account', true);
+      return response.data;
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', '/v2/account', false);
+      throw error;
+    }
   }
 
   /**
@@ -293,22 +308,34 @@ export class AlpacaClient {
       return order;
     }
 
-    const response = await this.client.post<AlpacaOrder>('/v2/orders', {
-      symbol,
-      qty: quantity,
-      side,
-      type: 'market',
-      time_in_force: 'day',
-    });
+    // Check rate limit before making request
+    await rateLimiterService.waitForRateLimit('alpaca');
 
-    logger.info('Market order submitted', {
-      orderId: response.data.id,
-      symbol,
-      side,
-      quantity,
-    });
+    try {
+      const response = await this.client.post<AlpacaOrder>('/v2/orders', {
+        symbol,
+        qty: quantity,
+        side,
+        type: 'market',
+        time_in_force: 'day',
+      });
 
-    return response.data;
+      // Record successful request
+      await rateLimiterService.recordRequest('alpaca', '/v2/orders', true);
+
+      logger.info('Market order submitted', {
+        orderId: response.data.id,
+        symbol,
+        side,
+        quantity,
+      });
+
+      return response.data;
+    } catch (error) {
+      // Record failed request
+      await rateLimiterService.recordRequest('alpaca', '/v2/orders', false);
+      throw error;
+    }
   }
 
   /**
@@ -320,24 +347,47 @@ export class AlpacaClient {
     quantity: number,
     limitPrice: number
   ): Promise<AlpacaOrder> {
-    const response = await this.client.post<AlpacaOrder>('/v2/orders', {
-      symbol,
-      qty: quantity,
-      side,
-      type: 'limit',
-      time_in_force: 'day',
-      limit_price: limitPrice.toFixed(2),
-    });
+    await this.initialize();
 
-    logger.info('Limit order submitted', {
-      orderId: response.data.id,
-      symbol,
-      side,
-      quantity,
-      limitPrice,
-    });
+    if (this.isDemoMode) {
+      const order = this.getSimulatedOrder(symbol, side, quantity, 'limit', limitPrice);
+      logger.info('Demo limit order submitted', {
+        orderId: order.id,
+        symbol,
+        side,
+        quantity,
+        limitPrice,
+      });
+      return order;
+    }
 
-    return response.data;
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      const response = await this.client.post<AlpacaOrder>('/v2/orders', {
+        symbol,
+        qty: quantity,
+        side,
+        type: 'limit',
+        time_in_force: 'day',
+        limit_price: limitPrice.toFixed(2),
+      });
+
+      await rateLimiterService.recordRequest('alpaca', '/v2/orders', true);
+
+      logger.info('Limit order submitted', {
+        orderId: response.data.id,
+        symbol,
+        side,
+        quantity,
+        limitPrice,
+      });
+
+      return response.data;
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', '/v2/orders', false);
+      throw error;
+    }
   }
 
   /**
@@ -349,24 +399,47 @@ export class AlpacaClient {
     quantity: number,
     stopPrice: number
   ): Promise<AlpacaOrder> {
-    const response = await this.client.post<AlpacaOrder>('/v2/orders', {
-      symbol,
-      qty: quantity,
-      side,
-      type: 'stop',
-      time_in_force: 'day',
-      stop_price: stopPrice.toFixed(2),
-    });
+    await this.initialize();
 
-    logger.info('Stop order submitted', {
-      orderId: response.data.id,
-      symbol,
-      side,
-      quantity,
-      stopPrice,
-    });
+    if (this.isDemoMode) {
+      const order = this.getSimulatedOrder(symbol, side, quantity, 'stop', undefined, stopPrice);
+      logger.info('Demo stop order submitted', {
+        orderId: order.id,
+        symbol,
+        side,
+        quantity,
+        stopPrice,
+      });
+      return order;
+    }
 
-    return response.data;
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      const response = await this.client.post<AlpacaOrder>('/v2/orders', {
+        symbol,
+        qty: quantity,
+        side,
+        type: 'stop',
+        time_in_force: 'day',
+        stop_price: stopPrice.toFixed(2),
+      });
+
+      await rateLimiterService.recordRequest('alpaca', '/v2/orders', true);
+
+      logger.info('Stop order submitted', {
+        orderId: response.data.id,
+        symbol,
+        side,
+        quantity,
+        stopPrice,
+      });
+
+      return response.data;
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', '/v2/orders', false);
+      throw error;
+    }
   }
 
   /**
@@ -379,80 +452,186 @@ export class AlpacaClient {
     stopPrice: number,
     limitPrice: number
   ): Promise<AlpacaOrder> {
-    const response = await this.client.post<AlpacaOrder>('/v2/orders', {
-      symbol,
-      qty: quantity,
-      side,
-      type: 'stop_limit',
-      time_in_force: 'day',
-      stop_price: stopPrice.toFixed(2),
-      limit_price: limitPrice.toFixed(2),
-    });
+    await this.initialize();
 
-    logger.info('Stop-limit order submitted', {
-      orderId: response.data.id,
-      symbol,
-      side,
-      quantity,
-      stopPrice,
-      limitPrice,
-    });
+    if (this.isDemoMode) {
+      const order = this.getSimulatedOrder(symbol, side, quantity, 'stop_limit', limitPrice, stopPrice);
+      logger.info('Demo stop-limit order submitted', {
+        orderId: order.id,
+        symbol,
+        side,
+        quantity,
+        stopPrice,
+        limitPrice,
+      });
+      return order;
+    }
 
-    return response.data;
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      const response = await this.client.post<AlpacaOrder>('/v2/orders', {
+        symbol,
+        qty: quantity,
+        side,
+        type: 'stop_limit',
+        time_in_force: 'day',
+        stop_price: stopPrice.toFixed(2),
+        limit_price: limitPrice.toFixed(2),
+      });
+
+      await rateLimiterService.recordRequest('alpaca', '/v2/orders', true);
+
+      logger.info('Stop-limit order submitted', {
+        orderId: response.data.id,
+        symbol,
+        side,
+        quantity,
+        stopPrice,
+        limitPrice,
+      });
+
+      return response.data;
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', '/v2/orders', false);
+      throw error;
+    }
   }
 
   /**
    * Get order by ID
    */
   async getOrder(orderId: string): Promise<AlpacaOrder> {
-    const response = await this.client.get<AlpacaOrder>(`/v2/orders/${orderId}`);
-    return response.data;
+    await this.initialize();
+
+    if (this.isDemoMode) {
+      throw new Error('Order retrieval not available in demo mode');
+    }
+
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      const response = await this.client.get<AlpacaOrder>(`/v2/orders/${orderId}`);
+      await rateLimiterService.recordRequest('alpaca', `/v2/orders/${orderId}`, true);
+      return response.data;
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', `/v2/orders/${orderId}`, false);
+      throw error;
+    }
   }
 
   /**
    * Get all orders
    */
   async getOrders(status?: 'open' | 'closed' | 'all'): Promise<AlpacaOrder[]> {
-    const response = await this.client.get<AlpacaOrder[]>('/v2/orders', {
-      params: { status: status || 'open' },
-    });
-    return response.data;
+    await this.initialize();
+
+    if (this.isDemoMode) {
+      return []; // Return empty array in demo mode
+    }
+
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      const response = await this.client.get<AlpacaOrder[]>('/v2/orders', {
+        params: { status: status || 'open' },
+      });
+      await rateLimiterService.recordRequest('alpaca', '/v2/orders', true);
+      return response.data;
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', '/v2/orders', false);
+      throw error;
+    }
   }
 
   /**
    * Cancel an order
    */
   async cancelOrder(orderId: string): Promise<void> {
-    await this.client.delete(`/v2/orders/${orderId}`);
-    logger.info('Order cancelled', { orderId });
+    await this.initialize();
+
+    if (this.isDemoMode) {
+      logger.info('Demo order cancelled', { orderId });
+      return;
+    }
+
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      await this.client.delete(`/v2/orders/${orderId}`);
+      await rateLimiterService.recordRequest('alpaca', `/v2/orders/${orderId}`, true);
+      logger.info('Order cancelled', { orderId });
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', `/v2/orders/${orderId}`, false);
+      throw error;
+    }
   }
 
   /**
    * Cancel all orders
    */
   async cancelAllOrders(): Promise<void> {
-    await this.client.delete('/v2/orders');
-    logger.info('All orders cancelled');
+    await this.initialize();
+
+    if (this.isDemoMode) {
+      logger.info('All demo orders cancelled');
+      return;
+    }
+
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      await this.client.delete('/v2/orders');
+      await rateLimiterService.recordRequest('alpaca', '/v2/orders', true);
+      logger.info('All orders cancelled');
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', '/v2/orders', false);
+      throw error;
+    }
   }
 
   /**
    * Get all positions
    */
   async getPositions(): Promise<AlpacaPosition[]> {
-    const response = await this.client.get<AlpacaPosition[]>('/v2/positions');
-    return response.data;
+    await this.initialize();
+
+    if (this.isDemoMode) {
+      return []; // Return empty array in demo mode
+    }
+
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      const response = await this.client.get<AlpacaPosition[]>('/v2/positions');
+      await rateLimiterService.recordRequest('alpaca', '/v2/positions', true);
+      return response.data;
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', '/v2/positions', false);
+      throw error;
+    }
   }
 
   /**
    * Get position for a symbol
    */
   async getPosition(symbol: string): Promise<AlpacaPosition | null> {
+    await this.initialize();
+
+    if (this.isDemoMode) {
+      return null; // No positions in demo mode
+    }
+
+    await rateLimiterService.waitForRateLimit('alpaca');
+
     try {
       const response = await this.client.get<AlpacaPosition>(
         `/v2/positions/${symbol}`
       );
+      await rateLimiterService.recordRequest('alpaca', `/v2/positions/${symbol}`, true);
       return response.data;
     } catch (error: any) {
+      await rateLimiterService.recordRequest('alpaca', `/v2/positions/${symbol}`, error.response?.status !== 404);
       if (error.response?.status === 404) {
         return null;
       }
@@ -464,20 +643,51 @@ export class AlpacaClient {
    * Close a position
    */
   async closePosition(symbol: string): Promise<AlpacaOrder> {
-    const response = await this.client.delete<AlpacaOrder>(
-      `/v2/positions/${symbol}`
-    );
-    logger.info('Position closed', { symbol });
-    return response.data;
+    await this.initialize();
+
+    if (this.isDemoMode) {
+      const order = this.getSimulatedOrder(symbol, 'sell', 0, 'market');
+      logger.info('Demo position closed', { symbol });
+      return order;
+    }
+
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      const response = await this.client.delete<AlpacaOrder>(
+        `/v2/positions/${symbol}`
+      );
+      await rateLimiterService.recordRequest('alpaca', `/v2/positions/${symbol}`, true);
+      logger.info('Position closed', { symbol });
+      return response.data;
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', `/v2/positions/${symbol}`, false);
+      throw error;
+    }
   }
 
   /**
    * Close all positions
    */
   async closeAllPositions(): Promise<AlpacaOrder[]> {
-    const response = await this.client.delete<AlpacaOrder[]>('/v2/positions');
-    logger.info('All positions closed');
-    return response.data;
+    await this.initialize();
+
+    if (this.isDemoMode) {
+      logger.info('All demo positions closed');
+      return [];
+    }
+
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      const response = await this.client.delete<AlpacaOrder[]>('/v2/positions');
+      await rateLimiterService.recordRequest('alpaca', '/v2/positions', true);
+      logger.info('All positions closed');
+      return response.data;
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', '/v2/positions', false);
+      throw error;
+    }
   }
 
   /**
@@ -491,10 +701,23 @@ export class AlpacaClient {
       return this.getSimulatedQuote(symbol);
     }
 
-    const response = await this.dataClient.get<{ quote: AlpacaQuote }>(
-      `/v2/stocks/${symbol}/quotes/latest`
-    );
-    return response.data.quote;
+    // Check rate limit before making request
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      const response = await this.dataClient.get<{ quote: AlpacaQuote }>(
+        `/v2/stocks/${symbol}/quotes/latest`
+      );
+
+      // Record successful request
+      await rateLimiterService.recordRequest('alpaca', `/v2/stocks/${symbol}/quotes/latest`, true);
+
+      return response.data.quote;
+    } catch (error) {
+      // Record failed request
+      await rateLimiterService.recordRequest('alpaca', `/v2/stocks/${symbol}/quotes/latest`, false);
+      throw error;
+    }
   }
 
   /**
@@ -561,13 +784,32 @@ export class AlpacaClient {
    * Get latest quotes for multiple symbols
    */
   async getLatestQuotes(symbols: string[]): Promise<Record<string, AlpacaQuote>> {
-    const response = await this.dataClient.get<{ quotes: Record<string, AlpacaQuote> }>(
-      '/v2/stocks/quotes/latest',
-      {
-        params: { symbols: symbols.join(',') },
+    await this.initialize();
+
+    // Demo mode: return simulated quotes for all symbols
+    if (this.isDemoMode) {
+      const quotes: Record<string, AlpacaQuote> = {};
+      for (const symbol of symbols) {
+        quotes[symbol] = this.getSimulatedQuote(symbol);
       }
-    );
-    return response.data.quotes;
+      return quotes;
+    }
+
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      const response = await this.dataClient.get<{ quotes: Record<string, AlpacaQuote> }>(
+        '/v2/stocks/quotes/latest',
+        {
+          params: { symbols: symbols.join(',') },
+        }
+      );
+      await rateLimiterService.recordRequest('alpaca', '/v2/stocks/quotes/latest', true);
+      return response.data.quotes;
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', '/v2/stocks/quotes/latest', false);
+      throw error;
+    }
   }
 
   /**
