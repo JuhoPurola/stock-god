@@ -1,11 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { usePortfolioStore } from '../store/portfolio-store';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { formatCurrency, formatPercent } from '@stock-picker/shared';
-import { TrendingUp, TrendingDown, DollarSign, Briefcase } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Briefcase, Activity, Zap } from 'lucide-react';
+import PortfolioValueChart from '../components/dashboard/PortfolioValueChart';
+import RecentActivity from '../components/dashboard/RecentActivity';
+import TopPerformers from '../components/dashboard/TopPerformers';
+import QuickActions from '../components/dashboard/QuickActions';
+import { DashboardSkeleton } from '../components/ui/Skeleton';
 
 export function DashboardPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth0();
@@ -20,6 +25,60 @@ export function DashboardPage() {
   const totalValue = portfolios.reduce((sum, p) => sum + p.totalValue, 0);
   const totalPnL = portfolios.reduce((sum, p) => sum + p.unrealizedPnL, 0);
   const totalPnLPercent = totalValue > 0 ? (totalPnL / totalValue) * 100 : 0;
+
+  // Generate mock portfolio value chart data (last 30 days)
+  const portfolioValueData = useMemo(() => {
+    const data = [];
+    const today = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      // Simulate value fluctuation
+      const baseValue = totalValue > 0 ? totalValue : 10000;
+      const randomChange = (Math.random() - 0.5) * 1000;
+      const value = baseValue + randomChange;
+      data.push({
+        date: date.toISOString(),
+        value: value > 0 ? value : baseValue,
+      });
+    }
+    return data;
+  }, [totalValue]);
+
+  // Mock recent activity
+  const recentActivity = useMemo(() => {
+    return [
+      {
+        id: '1',
+        type: 'trade' as const,
+        title: 'Buy order executed',
+        description: 'Bought 10 shares of AAPL',
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        status: 'success' as const,
+      },
+      {
+        id: '2',
+        type: 'alert' as const,
+        title: 'Price alert triggered',
+        description: 'TSLA reached your target price',
+        timestamp: new Date(Date.now() - 7200000).toISOString(),
+      },
+      {
+        id: '3',
+        type: 'strategy' as const,
+        title: 'Strategy signal generated',
+        description: 'Momentum strategy suggests BUY for MSFT',
+        timestamp: new Date(Date.now() - 10800000).toISOString(),
+        status: 'info' as const,
+      },
+    ];
+  }, []);
+
+  // Note: positions would need to be fetched separately
+  // For now using empty array as placeholder
+  const allPositions = useMemo(() => {
+    return [];
+  }, []);
 
   if (authLoading) {
     return (
@@ -46,11 +105,7 @@ export function DashboardPage() {
   }
 
   if (loading && portfolios.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading portfolios...</div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -125,6 +180,68 @@ export function DashboardPage() {
           </div>
         </Card>
       </div>
+
+      {/* Charts and Widgets Row */}
+      {portfolios.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Portfolio Value Chart */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-blue-600" />
+                <span>Portfolio Value (30 Days)</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <PortfolioValueChart data={portfolioValueData} />
+            </CardContent>
+          </Card>
+
+          {/* Top Performers */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-green-600" />
+                <span>Top Performers</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <TopPerformers positions={allPositions} limit={5} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Quick Actions and Recent Activity */}
+      {portfolios.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-orange-600" />
+                <span>Quick Actions</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <QuickActions />
+            </CardContent>
+          </Card>
+
+          {/* Recent Activity */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-purple-600" />
+                <span>Recent Activity</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <RecentActivity activities={recentActivity} maxItems={5} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Portfolios List */}
       <Card>

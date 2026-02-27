@@ -1,0 +1,1 @@
+{"version":3,"file":"small-cap-stocks.d.ts","sourceRoot":"","sources":["../../src/data/small-cap-stocks.ts"],"names":[],"mappings":"AAAA;;;;GAIG;AAEH,MAAM,WAAW,aAAa;IAC5B,MAAM,EAAE,MAAM,CAAC;IACf,IAAI,EAAE,MAAM,CAAC;IACb,QAAQ,EAAE,MAAM,CAAC;IACjB,MAAM,EAAE,MAAM,CAAC;IACf,SAAS,EAAE,MAAM,CAAC;CACnB;AAED;;;GAGG;AACH,eAAO,MAAM,gBAAgB,EAAE,aAAa,EA+M3C,CAAC"}

@@ -1,15 +1,17 @@
 import { User, LogOut, LogIn } from 'lucide-react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { AlertBell } from '../alerts/AlertBell';
+import ThemeToggle from '../ui/ThemeToggle';
 
 export function Header() {
   const { user, isAuthenticated, isLoading, loginWithRedirect, logout } = useAuth0();
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+    <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6">
       <div className="flex-1" />
 
       <div className="flex items-center space-x-4">
+        <ThemeToggle />
         {isAuthenticated && <AlertBell />}
 
         {!isLoading && (

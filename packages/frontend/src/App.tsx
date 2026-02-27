@@ -1,9 +1,11 @@
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthWrapper } from './components/AuthWrapper';
 import { WebSocketProvider } from './components/WebSocketProvider';
 import { Layout } from './components/layout/Layout';
 import { ToastContainer } from './components/ui/Toast';
+import CommandPalette from './components/ui/CommandPalette';
 import { useToastStore } from './store/toast-store';
 import { DashboardPage } from './pages/DashboardPage';
 import { PortfoliosPage } from './pages/PortfoliosPage';
@@ -23,6 +25,20 @@ import SettingsPage from './pages/SettingsPage';
 
 function App() {
   const { toasts, removeToast } = useToastStore();
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Listen for Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <ErrorBoundary>
@@ -49,6 +65,10 @@ function App() {
             </Routes>
           </Layout>
           <ToastContainer toasts={toasts} onClose={removeToast} />
+          <CommandPalette
+            isOpen={isCommandPaletteOpen}
+            onClose={() => setIsCommandPaletteOpen(false)}
+          />
         </WebSocketProvider>
       </AuthWrapper>
     </ErrorBoundary>
