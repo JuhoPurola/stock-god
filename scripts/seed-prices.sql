@@ -45,7 +45,7 @@ BEGIN
       price_volume := 1000000 + FLOOR(RANDOM() * 10000000);
 
       -- Insert or update price data
-      INSERT INTO stock_prices (symbol, date, open, high, low, close, volume)
+      INSERT INTO stock_prices (symbol, timestamp, open, high, low, close, volume)
       VALUES (
         stock_symbol,
         day_date,
@@ -55,13 +55,12 @@ BEGIN
         ROUND(price_close::numeric, 4),
         price_volume
       )
-      ON CONFLICT (symbol, date) DO UPDATE SET
+      ON CONFLICT (symbol, timestamp) DO UPDATE SET
         open = EXCLUDED.open,
         high = EXCLUDED.high,
         low = EXCLUDED.low,
         close = EXCLUDED.close,
-        volume = EXCLUDED.volume,
-        updated_at = NOW();
+        volume = EXCLUDED.volume;
     END LOOP;
 
     RAISE NOTICE 'Generated % days of price data for %', days_back, stock_symbol;
@@ -72,6 +71,6 @@ END $$;
 SELECT
   COUNT(DISTINCT symbol) as symbols_with_data,
   COUNT(*) as total_price_records,
-  MIN(date) as earliest_date,
-  MAX(date) as latest_date
+  MIN(timestamp) as earliest_date,
+  MAX(timestamp) as latest_date
 FROM stock_prices;

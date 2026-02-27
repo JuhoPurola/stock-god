@@ -9,9 +9,23 @@ import * as strategyHandlers from './handlers/strategies.handler.js';
 import * as tradeHandlers from './handlers/trades.handler.js';
 import * as stockHandlers from './handlers/stocks.handler.js';
 import * as backtestHandlers from './handlers/backtests.handler.js';
+import * as alertHandlers from './handlers/alerts.handler.js';
 import * as demoBacktestHandlers from './handlers/demo-backtest.handler.js';
 import * as demoDiagnosticsHandlers from './handlers/demo-diagnostics.handler.js';
 import * as demoSeedHandlers from './handlers/demo-seed.handler.js';
+import * as demoPopulateStocksHandlers from './handlers/demo-populate-stocks.handler.js';
+import * as demoAlphaBacktestHandlers from './handlers/demo-alpha-backtest.handler.js';
+import * as demoLoadRealPricesHandlers from './handlers/demo-load-real-prices.handler.js';
+import * as demoMicroCapBacktestHandlers from './handlers/demo-micro-cap-backtest.handler.js';
+import * as demoSetupHandlers from './handlers/demo-setup.handler.js';
+import * as demoMigrateUserHandlers from './handlers/demo-migrate-user.handler.js';
+
+// WebSocket handlers are exported separately
+export {
+  handleConnect,
+  handleDisconnect,
+  handleMessage,
+} from './handlers/websocket.handler.js';
 
 // Route handlers map
 const routes: Record<string, Record<string, (event: APIGatewayProxyEvent) => Promise<APIGatewayProxyResult>>> = {
@@ -40,6 +54,7 @@ const routes: Record<string, Record<string, (event: APIGatewayProxyEvent) => Pro
   'POST /trades': { handler: tradeHandlers.executeTrade },
   'GET /trades/{id}': { handler: tradeHandlers.getTrade },
   'POST /trades/{id}/check-status': { handler: tradeHandlers.checkOrderStatus },
+  'GET /stocks': { handler: stockHandlers.listStocks },
   'GET /stocks/search': { handler: stockHandlers.searchStocks },
   'GET /stocks/{symbol}': { handler: stockHandlers.getStock },
   'GET /stocks/{symbol}/quote': { handler: stockHandlers.getQuote },
@@ -50,9 +65,25 @@ const routes: Record<string, Record<string, (event: APIGatewayProxyEvent) => Pro
   'GET /backtests/{id}/trades': { handler: backtestHandlers.getBacktestTrades },
   'DELETE /backtests/{id}': { handler: backtestHandlers.deleteBacktest },
   'GET /portfolios/{portfolioId}/backtests': { handler: backtestHandlers.listPortfolioBacktests },
+  'GET /alerts': { handler: alertHandlers.getAlerts },
+  'GET /alerts/count/unread': { handler: alertHandlers.getUnreadCount },
+  'GET /alerts/preferences': { handler: alertHandlers.getPreferences },
+  'PUT /alerts/preferences': { handler: alertHandlers.updatePreferences },
+  'GET /alerts/price-alerts': { handler: alertHandlers.getPriceAlerts },
+  'POST /alerts/price-alerts': { handler: alertHandlers.createPriceAlert },
+  'DELETE /alerts/price-alerts/{id}': { handler: alertHandlers.deactivatePriceAlert },
+  'GET /alerts/{id}': { handler: alertHandlers.getAlert },
+  'PUT /alerts/{id}/read': { handler: alertHandlers.markAlertAsRead },
+  'PUT /alerts/read-all': { handler: alertHandlers.markAllAlertsAsRead },
   'POST /demo/backtest': { handler: demoBacktestHandlers.runDemoBacktest },
   'GET /demo/diagnostics': { handler: demoDiagnosticsHandlers.checkDiagnostics },
   'POST /demo/seed': { handler: demoSeedHandlers.seedDemoData },
+  'POST /demo/populate-stocks': { handler: demoPopulateStocksHandlers.handler },
+  'POST /demo/alpha-backtest': { handler: demoAlphaBacktestHandlers.handler },
+  'POST /demo/load-real-prices': { handler: demoLoadRealPricesHandlers.handler },
+  'POST /demo/micro-cap-backtest': { handler: demoMicroCapBacktestHandlers.handler },
+  'POST /demo/setup': { handler: demoSetupHandlers.handler },
+  'POST /demo/migrate-user': { handler: demoMigrateUserHandlers.handler },
 };
 
 // Extract path parameters from URL based on route template

@@ -168,6 +168,24 @@ export interface AlpacaQuote {
 }
 
 /**
+ * Alpaca Asset (tradeable stock)
+ */
+export interface AlpacaAsset {
+  id: string;
+  class: string;
+  exchange: string;
+  symbol: string;
+  name: string;
+  status: string;
+  tradable: boolean;
+  marginable: boolean;
+  shortable: boolean;
+  easy_to_borrow: boolean;
+  fractionable: boolean;
+  attributes: string[];
+}
+
+/**
  * Alpaca API client
  */
 export class AlpacaClient {
@@ -808,6 +826,34 @@ export class AlpacaClient {
       return response.data.quotes;
     } catch (error) {
       await rateLimiterService.recordRequest('alpaca', '/v2/stocks/quotes/latest', false);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all tradeable assets
+   */
+  async getAssets(status: 'active' | 'inactive' = 'active'): Promise<AlpacaAsset[]> {
+    await this.initialize();
+
+    if (this.isDemoMode) {
+      // Return a small demo set in demo mode
+      return [];
+    }
+
+    await rateLimiterService.waitForRateLimit('alpaca');
+
+    try {
+      const response = await this.client.get<AlpacaAsset[]>('/v2/assets', {
+        params: {
+          status,
+          asset_class: 'us_equity',
+        },
+      });
+      await rateLimiterService.recordRequest('alpaca', '/v2/assets', true);
+      return response.data;
+    } catch (error) {
+      await rateLimiterService.recordRequest('alpaca', '/v2/assets', false);
       throw error;
     }
   }

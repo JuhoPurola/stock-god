@@ -7,6 +7,9 @@
 export { IFactor, BaseFactor } from './core/IFactor.js';
 export { Strategy, MomentumStrategy } from './core/Strategy.js';
 
+// Strategies
+export { SmallCapAlphaStrategy } from './strategies/SmallCapAlphaStrategy.js';
+
 // Factor factory
 export { FactorFactory } from './factors/FactorFactory.js';
 

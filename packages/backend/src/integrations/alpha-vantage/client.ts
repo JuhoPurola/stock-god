@@ -188,6 +188,13 @@ export class AlphaVantageClient {
         },
       });
 
+      // Log full response for debugging
+      logger.info('Alpha Vantage response received', {
+        symbol,
+        hasData: !!response.data,
+        keys: Object.keys(response.data || {}),
+      });
+
       // Check for API error messages
       if (response.data['Error Message']) {
         throw new Error(response.data['Error Message']);
@@ -199,9 +206,18 @@ export class AlphaVantageClient {
         throw new Error('Rate limit exceeded');
       }
 
+      if (response.data['Information']) {
+        logger.warn('Alpha Vantage information message', { info: response.data['Information'] });
+        throw new Error(response.data['Information']);
+      }
+
       const timeSeries = response.data['Time Series (Daily)'];
       if (!timeSeries) {
-        logger.error('Unexpected response format', { data: response.data });
+        logger.error('Unexpected response format from Alpha Vantage', {
+          symbol,
+          responseKeys: Object.keys(response.data || {}),
+          sampleData: JSON.stringify(response.data).substring(0, 500),
+        });
         throw new Error('Invalid response format from Alpha Vantage');
       }
 
@@ -263,6 +279,13 @@ export class AlphaVantageClient {
         },
       });
 
+      // Log full response for debugging
+      logger.info('Alpha Vantage response received', {
+        symbol,
+        hasData: !!response.data,
+        keys: Object.keys(response.data || {}),
+      });
+
       if (response.data['Error Message']) {
         throw new Error(response.data['Error Message']);
       }
@@ -272,9 +295,19 @@ export class AlphaVantageClient {
         throw new Error('Rate limit exceeded');
       }
 
+      if (response.data['Information']) {
+        logger.warn('Alpha Vantage information message', { info: response.data['Information'] });
+        throw new Error(response.data['Information']);
+      }
+
+      // Try different possible keys for adjusted data
       const timeSeries = response.data['Time Series (Daily)'];
       if (!timeSeries) {
-        logger.error('Unexpected response format', { data: response.data });
+        logger.error('Unexpected response format from Alpha Vantage', {
+          symbol,
+          responseKeys: Object.keys(response.data || {}),
+          sampleData: JSON.stringify(response.data).substring(0, 500),
+        });
         throw new Error('Invalid response format from Alpha Vantage');
       }
 

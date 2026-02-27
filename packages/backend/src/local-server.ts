@@ -109,6 +109,7 @@ app.post('/trades', wrapHandler(tradeHandlers.executeTrade));
 app.post('/trades/:id/check-status', wrapHandler(tradeHandlers.checkOrderStatus));
 
 // Stock routes
+app.get('/stocks', wrapHandler(stockHandlers.listStocks));
 app.get('/stocks/search', wrapHandler(stockHandlers.searchStocks));
 app.get('/stocks/:symbol', wrapHandler(stockHandlers.getStock));
 app.get('/stocks/:symbol/quote', wrapHandler(stockHandlers.getQuote));

@@ -5,6 +5,7 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import type { ZodSchema } from 'zod';
 import { ValidationError } from './errors.js';
+import { getUserIdFromEvent } from '../middleware/auth.middleware.js';
 
 /**
  * Create API Gateway response
@@ -51,16 +52,17 @@ export function parseBody<T>(
 }
 
 /**
- * Get user ID from event (from authorizer or claims)
+ * Get user ID from event (validates Auth0 token and auto-creates user)
  */
-export function getUserId(event: APIGatewayProxyEvent): string {
-  // In production, this would come from Cognito authorizer
-  // For development, use a demo user ID
-  const userId =
-    event.requestContext?.authorizer?.claims?.sub ||
-    event.headers?.['x-user-id'] ||
-    event.headers?.['X-User-Id'] || // Case-insensitive headers
-    '00000000-0000-0000-0000-000000000001'; // Demo user
+export async function getUserId(event: APIGatewayProxyEvent): Promise<string> {
+  const userId = await getUserIdFromEvent(event);
+
+  if (!userId) {
+    throw new ValidationError('Authentication required', [{
+      message: 'No valid authentication token found',
+      path: ['authorization']
+    }]);
+  }
 
   return userId;
 }
