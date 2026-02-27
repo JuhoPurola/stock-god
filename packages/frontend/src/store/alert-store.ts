@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Alert, UserAlertPreferences, PriceAlert } from '@stock-picker/shared';
 import { apiClient } from '../lib/api-client';
+import { playAlertSound, isSoundEnabled, setSoundEnabled } from '../utils/notification-sound';
 
 interface AlertStore {
   // State
@@ -10,6 +11,7 @@ interface AlertStore {
   priceAlerts: PriceAlert[];
   loading: boolean;
   error: string | null;
+  soundEnabled: boolean;
 
   // Actions
   fetchAlerts: (options?: { unreadOnly?: boolean }) => Promise<void>;
@@ -31,6 +33,10 @@ interface AlertStore {
   }) => Promise<void>;
   deactivatePriceAlert: (id: string) => Promise<void>;
 
+  // Sound notifications
+  toggleSound: () => void;
+  setSoundEnabled: (enabled: boolean) => void;
+
   // Real-time updates
   addAlert: (alert: Alert) => void;
   incrementUnreadCount: () => void;
@@ -44,6 +50,7 @@ export const useAlertStore = create<AlertStore>((set, get) => ({
   priceAlerts: [],
   loading: false,
   error: null,
+  soundEnabled: isSoundEnabled(),
 
   // Fetch alerts
   fetchAlerts: async (options = {}) => {
@@ -189,12 +196,29 @@ export const useAlertStore = create<AlertStore>((set, get) => ({
     }
   },
 
+  // Sound notifications
+  toggleSound: () => {
+    const newState = !get().soundEnabled;
+    setSoundEnabled(newState);
+    set({ soundEnabled: newState });
+  },
+
+  setSoundEnabled: (enabled: boolean) => {
+    setSoundEnabled(enabled);
+    set({ soundEnabled: enabled });
+  },
+
   // Real-time updates (called from WebSocket)
   addAlert: (alert: Alert) => {
     set((state) => ({
       alerts: [alert, ...state.alerts],
       unreadCount: state.unreadCount + 1,
     }));
+
+    // Play sound notification if enabled
+    if (get().soundEnabled) {
+      playAlertSound(alert.severity);
+    }
   },
 
   incrementUnreadCount: () => {

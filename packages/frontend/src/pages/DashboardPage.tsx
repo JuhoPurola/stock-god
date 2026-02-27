@@ -10,11 +10,33 @@ import PortfolioValueChart from '../components/dashboard/PortfolioValueChart';
 import RecentActivity from '../components/dashboard/RecentActivity';
 import TopPerformers from '../components/dashboard/TopPerformers';
 import QuickActions from '../components/dashboard/QuickActions';
+import AnimatedCounter from '../components/ui/AnimatedCounter';
+import LiveIndicator from '../components/ui/LiveIndicator';
+import { useWebSocket } from '../hooks/useWebSocket';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 
 export function DashboardPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth0();
   const { portfolios, fetchPortfolios, loading } = usePortfolioStore();
+
+  // Connect to WebSocket for real-time updates
+  const { isConnected } = useWebSocket({
+    enabled: isAuthenticated,
+    handlers: {
+      onPortfolioUpdate: (event) => {
+        console.log('Portfolio update received:', event);
+        fetchPortfolios(); // Refresh portfolios when update received
+      },
+      onTradeExecuted: (event) => {
+        console.log('Trade executed:', event);
+        fetchPortfolios(); // Refresh after trade
+      },
+      onPriceUpdate: (event) => {
+        console.log('Price update:', event);
+        // Could update specific stock prices without full refresh
+      },
+    },
+  });
 
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
@@ -111,7 +133,10 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+          <LiveIndicator isLive={isConnected} />
+        </div>
         <Link to="/portfolios">
           <Button>View All Portfolios</Button>
         </Link>
@@ -122,10 +147,13 @@ export function DashboardPage() {
         <Card>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Value</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                {formatCurrency(totalValue)}
-              </p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Value</p>
+              <AnimatedCounter
+                value={totalValue}
+                decimals={2}
+                prefix="$"
+                className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1 block"
+              />
             </div>
             <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-primary-600" />
@@ -136,21 +164,23 @@ export function DashboardPage() {
         <Card>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total P&L</p>
-              <p
-                className={`text-2xl font-bold mt-1 ${
-                  totalPnL >= 0 ? 'text-success-600' : 'text-danger-600'
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total P&L</p>
+              <AnimatedCounter
+                value={totalPnL}
+                decimals={2}
+                prefix="$"
+                className={`text-2xl font-bold mt-1 block ${
+                  totalPnL >= 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'
                 }`}
-              >
-                {formatCurrency(totalPnL)}
-              </p>
-              <p
-                className={`text-sm ${
-                  totalPnL >= 0 ? 'text-success-600' : 'text-danger-600'
+              />
+              <AnimatedCounter
+                value={totalPnLPercent}
+                decimals={2}
+                suffix="%"
+                className={`text-sm block ${
+                  totalPnL >= 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'
                 }`}
-              >
-                {formatPercent(totalPnLPercent, 2, true)}
-              </p>
+              />
             </div>
             <div
               className={`w-12 h-12 rounded-full flex items-center justify-center ${
