@@ -71,7 +71,7 @@ export const handler = async (event: any) => {
           logger.info('Order filled', {
             tradeId: trade.id,
             symbol: trade.symbol,
-            executedPrice: updatedTrade.executedPrice,
+            executedPrice: updatedTrade.price,
           });
         } else if (
           updatedTrade.status === OrderStatus.CANCELLED &&

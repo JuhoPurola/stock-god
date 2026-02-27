@@ -50,3 +50,22 @@ temp/
 *.pem
 *.key
 secrets/
+
+# Build artifacts - Lambda bundles
+*.zip
+*.tar.gz
+infrastructure/lambda-*.zip
+
+# Auth configuration (use example files instead)
+packages/frontend/src/lib/auth0-config.ts
+
+# Production environment files
+.env.production
+.env.staging
+
+# Documentation with sensitive info
+/DEPLOYMENT_SUCCESS.md
+/WEBSOCKET_DEPLOYMENT_GUIDE.md
+
+# Temporary working files
+/tmp/

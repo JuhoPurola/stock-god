@@ -12,6 +12,7 @@ import type {
   PortfolioUpdateEvent,
 } from '@stock-picker/shared';
 import { apiClient } from '../lib/api-client';
+import { useToastStore } from './toast-store';
 
 interface PortfolioState {
   portfolios: PortfolioWithStats[];
@@ -70,11 +71,14 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     try {
       await apiClient.createPortfolio(data);
       await get().fetchPortfolios();
+      useToastStore.getState().showSuccess('Portfolio created successfully');
     } catch (error: any) {
+      const errorMessage = error.message || 'Failed to create portfolio';
       set({
-        error: error.message || 'Failed to create portfolio',
+        error: errorMessage,
         loading: false,
       });
+      useToastStore.getState().showError(errorMessage);
       throw error;
     }
   },
@@ -87,11 +91,14 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
       if (get().selectedPortfolio?.id === id) {
         await get().selectPortfolio(id);
       }
+      useToastStore.getState().showSuccess('Portfolio updated successfully');
     } catch (error: any) {
+      const errorMessage = error.message || 'Failed to update portfolio';
       set({
-        error: error.message || 'Failed to update portfolio',
+        error: errorMessage,
         loading: false,
       });
+      useToastStore.getState().showError(errorMessage);
       throw error;
     }
   },
@@ -104,11 +111,14 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
       if (get().selectedPortfolio?.id === id) {
         set({ selectedPortfolio: null });
       }
+      useToastStore.getState().showSuccess('Portfolio deleted successfully');
     } catch (error: any) {
+      const errorMessage = error.message || 'Failed to delete portfolio';
       set({
-        error: error.message || 'Failed to delete portfolio',
+        error: errorMessage,
         loading: false,
       });
+      useToastStore.getState().showError(errorMessage);
       throw error;
     }
   },

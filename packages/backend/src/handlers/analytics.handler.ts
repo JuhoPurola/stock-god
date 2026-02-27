@@ -7,7 +7,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { AnalyticsService } from '../services/analytics.service';
 import { PortfolioRepository } from '../repositories/portfolio.repository';
 import { getPool } from '../config/database';
-import { parseRequest, success, error } from '../utils/api.utils';
+import { createApiResponse, errorResponse, getPathParam, getQueryParam, getUserId } from '../utils/api.utils';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -20,7 +20,7 @@ export async function getPortfolioPerformance(
   try {
     const { portfolioId } = event.pathParameters || {};
     if (!portfolioId) {
-      return error('Portfolio ID is required', 400);
+      return createApiResponse(400, { error: 'Portfolio ID is required' });
     }
 
     const { startDate, endDate, period } = event.queryStringParameters || {};
@@ -59,7 +59,7 @@ export async function getPortfolioPerformance(
           start = new Date(2020, 0, 1); // Start from 2020
           break;
         default:
-          return error('Invalid period. Use: 1M, 3M, 6M, 1Y, YTD, ALL', 400);
+          return createApiResponse(400, { error: 'Invalid period. Use: 1M, 3M, 6M, 1Y, YTD, ALL' });
       }
     } else {
       // Default to last 30 days
@@ -84,14 +84,14 @@ export async function getPortfolioPerformance(
       end
     );
 
-    return success({
+    return createApiResponse(200, {
       portfolioId,
       period: { start, end },
       metrics,
     });
   } catch (err: any) {
     logger.error('Failed to get portfolio performance', err);
-    return error(err.message);
+    return errorResponse(err.message);
   }
 }
 
@@ -105,7 +105,7 @@ export async function getCachedMetrics(
   try {
     const { portfolioId } = event.pathParameters || {};
     if (!portfolioId) {
-      return error('Portfolio ID is required', 400);
+      return createApiResponse(400, { error: 'Portfolio ID is required' });
     }
 
     const pool = await getPool();
@@ -140,7 +140,7 @@ export async function getCachedMetrics(
       [portfolioId]
     );
 
-    return success({
+    return createApiResponse(200, {
       portfolioId,
       metrics: result.rows.map((row) => ({
         ...row,
@@ -151,7 +151,7 @@ export async function getCachedMetrics(
     });
   } catch (err: any) {
     logger.error('Failed to get cached metrics', err);
-    return error(err.message);
+    return errorResponse(err.message);
   }
 }
 
@@ -165,14 +165,14 @@ export async function calculateAndSaveMetrics(
   try {
     const { portfolioId } = event.pathParameters || {};
     if (!portfolioId) {
-      return error('Portfolio ID is required', 400);
+      return createApiResponse(400, { error: 'Portfolio ID is required' });
     }
 
     const body = event.body ? JSON.parse(event.body) : {};
     const { startDate, endDate } = body;
 
     if (!startDate || !endDate) {
-      return error('startDate and endDate are required', 400);
+      return createApiResponse(400, { error: 'startDate and endDate are required' });
     }
 
     const start = new Date(startDate);
@@ -199,14 +199,14 @@ export async function calculateAndSaveMetrics(
 
     logger.info('Metrics calculated and saved', { portfolioId });
 
-    return success({
+    return createApiResponse(200, {
       message: 'Metrics calculated and saved successfully',
       portfolioId,
       metrics,
     });
   } catch (err: any) {
     logger.error('Failed to calculate and save metrics', err);
-    return error(err.message);
+    return errorResponse(err.message);
   }
 }
 
@@ -220,7 +220,7 @@ export async function getPerformanceSummary(
   try {
     const { portfolioId } = event.pathParameters || {};
     if (!portfolioId) {
-      return error('Portfolio ID is required', 400);
+      return createApiResponse(400, { error: 'Portfolio ID is required' });
     }
 
     const pool = await getPool();
@@ -229,7 +229,7 @@ export async function getPerformanceSummary(
     // Verify portfolio exists and get current stats
     const portfolio = await portfolioRepo.findByIdWithStats(portfolioId);
     if (!portfolio) {
-      return error('Portfolio not found', 404);
+      return createApiResponse(404, { error: 'Portfolio not found' });
     }
 
     // Get most recent metrics
@@ -250,7 +250,7 @@ export async function getPerformanceSummary(
 
     const metrics = metricsResult.rows[0] || null;
 
-    return success({
+    return createApiResponse(200, {
       portfolioId,
       currentValue: portfolio.totalValue,
       totalReturn: portfolio.totalValue - portfolio.cashBalance,
@@ -265,7 +265,7 @@ export async function getPerformanceSummary(
     });
   } catch (err: any) {
     logger.error('Failed to get performance summary', err);
-    return error(err.message);
+    return errorResponse(err.message);
   }
 }
 
@@ -285,5 +285,5 @@ export const handler = async (
     return getPerformanceSummary(event);
   }
 
-  return error('Not found', 404);
+  return createApiResponse(404, { error: 'Not found' });
 };

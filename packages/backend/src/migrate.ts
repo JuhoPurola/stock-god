@@ -17,7 +17,7 @@ interface DatabaseSecret {
 }
 
 interface MigrationEvent {
-  action?: 'migrate' | 'seed' | 'status' | 'reset' | 'seed-prices' | 'setup-test';
+  action?: 'migrate' | 'seed' | 'status' | 'reset' | 'seed-prices' | 'setup-test' | 'add-analytics-enum';
 }
 
 export const handler = async (event: MigrationEvent = {}) => {
@@ -291,6 +291,45 @@ export const handler = async (event: MigrationEvent = {}) => {
           verification: result.rows[0]
         }),
       };
+    }
+
+    if (action === 'add-analytics-enum') {
+      console.log('Adding analytics_calculation to job_type enum...');
+
+      try {
+        // Add enum value
+        await client.query(`ALTER TYPE job_type ADD VALUE IF NOT EXISTS 'analytics_calculation'`);
+        console.log('✅ Added analytics_calculation to enum');
+
+        // Add scheduled job config
+        await client.query(`
+          INSERT INTO scheduled_jobs (job_type, schedule_expression, enabled, execution_count, failure_count)
+          VALUES ('analytics_calculation', 'cron(0 23 ? * MON-FRI *)', true, 0, 0)
+          ON CONFLICT (job_type) DO NOTHING
+        `);
+        console.log('✅ Added scheduled job configuration');
+
+        // Verify
+        const result = await client.query(`SELECT unnest(enum_range(NULL::job_type)) AS job_types`);
+        console.log('All job types:', result.rows.map((r: any) => r.job_types).join(', '));
+
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            message: 'Successfully added analytics_calculation enum value',
+            jobTypes: result.rows.map((r: any) => r.job_types),
+          }),
+        };
+      } catch (error: any) {
+        if (error.message.includes('already exists')) {
+          console.log('ℹ️  Enum value already exists');
+          return {
+            statusCode: 200,
+            body: JSON.stringify({ message: 'Enum value already exists' }),
+          };
+        }
+        throw error;
+      }
     }
 
     throw new Error(`Unknown action: ${action}`);

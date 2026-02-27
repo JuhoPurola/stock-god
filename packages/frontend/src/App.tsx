@@ -19,6 +19,7 @@ import { StockDataDashboard } from './pages/StockDataDashboard';
 import { StrategyOptimizerPage } from './pages/StrategyOptimizerPage';
 import { LiveSignalDashboard } from './pages/LiveSignalDashboard';
 import AlertsPage from './pages/AlertsPage';
+import SettingsPage from './pages/SettingsPage';
 
 function App() {
   const { toasts, removeToast } = useToastStore();
@@ -44,6 +45,7 @@ function App() {
               <Route path="/stocks/data-dashboard" element={<StockDataDashboard />} />
               <Route path="/trades" element={<TradesPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Routes>
           </Layout>
           <ToastContainer toasts={toasts} onClose={removeToast} />

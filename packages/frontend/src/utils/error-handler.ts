@@ -1,4 +1,4 @@
-import { useToast } from '../hooks/useToast';
+import { useToastStore } from '../store/toast-store';
 
 export const handleApiError = (error: any): string => {
   if (!navigator.onLine) {
@@ -29,7 +29,7 @@ export const withErrorHandling = async <T>(
   } catch (error: any) {
     const message = handleApiError(error);
     if (showToast) {
-      useToast.getState().showError(message);
+      useToastStore.getState().showError(message);
     }
     return null;
   }
