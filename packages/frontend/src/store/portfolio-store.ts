@@ -7,6 +7,9 @@ import type {
   PortfolioWithStats,
   CreatePortfolioRequest,
   UpdatePortfolioRequest,
+  TradeExecutedEvent,
+  PositionUpdateEvent,
+  PortfolioUpdateEvent,
 } from '@stock-picker/shared';
 import { apiClient } from '../lib/api-client';
 
@@ -23,6 +26,11 @@ interface PortfolioState {
   updatePortfolio: (id: string, data: UpdatePortfolioRequest) => Promise<void>;
   deletePortfolio: (id: string) => Promise<void>;
   clearError: () => void;
+
+  // WebSocket event handlers
+  handleTradeExecuted: (event: TradeExecutedEvent) => void;
+  handlePositionUpdate: (event: PositionUpdateEvent) => void;
+  handlePortfolioUpdate: (event: PortfolioUpdateEvent) => void;
 }
 
 export const usePortfolioStore = create<PortfolioState>((set, get) => ({
@@ -106,4 +114,48 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  // WebSocket event handlers
+  handleTradeExecuted: (event: TradeExecutedEvent) => {
+    const { portfolioId, trade } = event;
+    console.log('Trade executed event:', portfolioId, trade);
+
+    // Refresh the portfolio to get updated stats
+    if (get().selectedPortfolio?.id === portfolioId) {
+      get().selectPortfolio(portfolioId);
+    }
+
+    // Update portfolio in list
+    const portfolioIndex = get().portfolios.findIndex((p) => p.id === portfolioId);
+    if (portfolioIndex !== -1) {
+      // Refresh all portfolios to get updated stats
+      get().fetchPortfolios();
+    }
+  },
+
+  handlePositionUpdate: (event: PositionUpdateEvent) => {
+    const { portfolioId } = event;
+    console.log('Position update event:', portfolioId);
+
+    // Refresh the portfolio to get updated positions
+    if (get().selectedPortfolio?.id === portfolioId) {
+      get().selectPortfolio(portfolioId);
+    }
+  },
+
+  handlePortfolioUpdate: (event: PortfolioUpdateEvent) => {
+    const { portfolio } = event;
+    console.log('Portfolio update event:', portfolio.id);
+
+    // Update selected portfolio if it matches
+    if (get().selectedPortfolio?.id === portfolio.id) {
+      set({ selectedPortfolio: portfolio });
+    }
+
+    // Update portfolio in list
+    const portfolios = get().portfolios.map((p) =>
+      p.id === portfolio.id ? portfolio : p
+    );
+    set({ portfolios });
+  },
 }));

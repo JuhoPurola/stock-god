@@ -7,13 +7,19 @@ import {
   History,
   Settings,
   Activity,
+  Database,
+  Sliders,
+  Radio,
 } from 'lucide-react';
 import clsx from 'clsx';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Live Signals', href: '/live-signals', icon: Radio },
   { name: 'Portfolios', href: '/portfolios', icon: Briefcase },
+  { name: 'Optimizer', href: '/strategy-optimizer', icon: Sliders },
   { name: 'Backtests', href: '/backtests', icon: Activity },
+  { name: 'Stock Data', href: '/stocks/data-dashboard', icon: Database },
   { name: 'Stocks', href: '/stocks', icon: Search },
   { name: 'Trades', href: '/trades', icon: History },
 ];

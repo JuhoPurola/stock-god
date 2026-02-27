@@ -17,6 +17,8 @@ interface ApiStackProps extends cdk.StackProps {
   dbProxy: rds.DatabaseProxy;
   lambdaSecurityGroup: ec2.SecurityGroup;
   vpc: ec2.Vpc;
+  websocketApiId?: string;
+  connectionsTableName?: string;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -37,6 +39,11 @@ export class ApiStack extends cdk.Stack {
       description: 'Alpha Vantage API key',
     });
 
+    const fmpSecret = new secretsmanager.Secret(this, 'FMPSecret', {
+      secretName: `stock-picker/${props.environment}/fmp`,
+      description: 'Financial Modeling Prep API key',
+    });
+
     // Create Lambda function for API
     // Cost optimizations:
     // - ARM architecture (20% cheaper + 34% faster)
@@ -52,7 +59,10 @@ export class ApiStack extends cdk.Stack {
         minify: true,
         sourceMap: false,
         target: 'node20',
-        externalModules: ['@aws-sdk/*'], // AWS SDK v3 is available in Lambda runtime
+        externalModules: [
+          '@aws-sdk/*', // AWS SDK v3 is available in Lambda runtime
+          'pg-native', // Optional native dependency not needed
+        ],
       },
       vpc: props.vpc,
       vpcSubnets: {
@@ -69,6 +79,14 @@ export class ApiStack extends cdk.Stack {
         DATABASE_HOST: props.dbProxy.endpoint,
         ALPACA_SECRET_ARN: alpacaSecret.secretArn,
         ALPHA_VANTAGE_SECRET_ARN: alphaVantageSecret.secretArn,
+        FMP_SECRET_ARN: fmpSecret.secretArn,
+        // WebSocket configuration (optional, for real-time updates)
+        ...(props.websocketApiId && {
+          WEBSOCKET_API_ENDPOINT: `https://${props.websocketApiId}.execute-api.${this.region}.amazonaws.com/${props.environment}`,
+        }),
+        ...(props.connectionsTableName && {
+          CONNECTIONS_TABLE_NAME: props.connectionsTableName,
+        }),
       },
     });
 
@@ -76,9 +94,33 @@ export class ApiStack extends cdk.Stack {
     props.database.secret!.grantRead(apiFunction);
     alpacaSecret.grantRead(apiFunction);
     alphaVantageSecret.grantRead(apiFunction);
+    fmpSecret.grantRead(apiFunction);
 
     // Grant Lambda access to database via RDS Proxy
     props.dbProxy.grantConnect(apiFunction);
+
+    // Grant WebSocket permissions (if WebSocket is configured)
+    if (props.websocketApiId && props.connectionsTableName) {
+      // Grant read access to connections table for querying connections
+      apiFunction.addToRolePolicy(new iam.PolicyStatement({
+        actions: [
+          'dynamodb:Query',
+          'dynamodb:GetItem',
+        ],
+        resources: [
+          `arn:aws:dynamodb:${this.region}:${this.account}:table/${props.connectionsTableName}`,
+          `arn:aws:dynamodb:${this.region}:${this.account}:table/${props.connectionsTableName}/index/*`,
+        ],
+      }));
+
+      // Grant API Gateway Management API permissions for sending messages
+      apiFunction.addToRolePolicy(new iam.PolicyStatement({
+        actions: ['execute-api:ManageConnections'],
+        resources: [
+          `arn:aws:execute-api:${this.region}:${this.account}:${props.websocketApiId}/${props.environment}/POST/@connections/*`,
+        ],
+      }));
+    }
 
     // Create HTTP API (70% cheaper than REST API)
     // Cost optimization: $1.00 per million requests vs $3.50 for REST API

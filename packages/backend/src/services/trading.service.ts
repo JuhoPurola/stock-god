@@ -18,6 +18,7 @@ import {
 import { transaction } from '../config/database.js';
 import { logger } from '../utils/logger.js';
 import { ValidationError } from '../utils/errors.js';
+import * as websocketService from './websocket.service.js';
 
 export class TradingService {
   private portfolioRepo = new PortfolioRepository();
@@ -206,13 +207,22 @@ export class TradingService {
           : currentPrice;
 
         // Return updated trade with the changes we made
-        return {
+        const updatedTrade = {
           ...trade,
           brokerOrderId: alpacaOrder.id,
           status: orderType === OrderType.MARKET ? OrderStatus.FILLED : OrderStatus.SUBMITTED,
           executedAt: orderType === OrderType.MARKET ? new Date() : undefined,
           executedPrice: orderType === OrderType.MARKET ? filledPrice : undefined,
         };
+
+        // Broadcast trade execution via WebSocket (non-blocking)
+        if (websocketService.isWebSocketEnabled()) {
+          websocketService.sendTradeExecuted(portfolioId, updatedTrade).catch(err =>
+            logger.error('Failed to broadcast trade execution', err)
+          );
+        }
+
+        return updatedTrade;
       } catch (error) {
         // Update trade status to rejected
         await this.tradeRepo.updateStatus(trade.id, OrderStatus.REJECTED, undefined, client);

@@ -195,7 +195,7 @@ export class DatabaseStack extends cdk.Stack {
       'Allow Lambda to access RDS Proxy'
     );
 
-    // Outputs
+    // Outputs - Keep exports for now to avoid CloudFormation dependency issues
     new cdk.CfnOutput(this, 'DatabaseEndpoint', {
       value: this.database.dbInstanceEndpointAddress,
       description: 'Database endpoint address',

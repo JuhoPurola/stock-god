@@ -21,7 +21,7 @@ export async function listPortfolios(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   try {
-    const userId = getUserId(event);
+    const userId = await getUserId(event);
     const portfolios = await portfolioRepo.findByUserIdWithStats(userId);
 
     return createApiResponse(200, { portfolios });
@@ -64,7 +64,7 @@ export async function createPortfolio(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   try {
-    const userId = getUserId(event);
+    const userId = await getUserId(event);
     const body = parseBody(event, createPortfolioSchema);
 
     const portfolio = await portfolioRepo.create(userId, body);

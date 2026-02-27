@@ -20,7 +20,7 @@ export async function createBacktest(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   try {
-    const userId = getUserId(event);
+    const userId = await getUserId(event);
     const body = parseBody(event, createBacktestSchema);
 
     // Validate config
@@ -104,7 +104,7 @@ export async function listBacktests(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   try {
-    const userId = getUserId(event);
+    const userId = await getUserId(event);
     const limit = parseInt(event.queryStringParameters?.limit || '50');
 
     const backtests = await backtestRepo.findByUserId(userId, limit);

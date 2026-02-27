@@ -5,6 +5,7 @@ import { DatabaseStack } from '../lib/stacks/database-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { FrontendStack } from '../lib/stacks/frontend-stack';
 import { SchedulerStack } from '../lib/stacks/scheduler-stack';
+import { WebSocketStack } from '../lib/stacks/websocket-stack';
 
 const app = new cdk.App();
 
@@ -27,7 +28,28 @@ const databaseStack = new DatabaseStack(app, `${stackPrefix}-Database`, {
   description: 'Stock Picker Database Stack - PostgreSQL RDS',
 });
 
-// API Stack
+// WebSocket Stack (deploy first to get exports)
+// Import values from existing Database stack exports
+const databaseSecretArn = cdk.Fn.importValue(`${stackPrefix}-Database-SecretArn`);
+const vpcId = cdk.Fn.importValue(`${stackPrefix}-Database-VpcId`);
+const databaseEndpoint = cdk.Fn.importValue(`${stackPrefix}-Database-Endpoint`);
+
+const webSocketStack = new WebSocketStack(app, `${stackPrefix}-WebSocket`, {
+  env,
+  environment,
+  databaseEndpoint: databaseEndpoint,
+  databaseName: 'stockpicker',
+  databaseSecretArn: databaseSecretArn,
+  vpcId: vpcId,
+  privateSubnetIds: [
+    cdk.Fn.importValue(`${stackPrefix}-Database:ExportsOutputRefVpc2PrivateSubnet1Subnet34902000FD7B208F`),
+    cdk.Fn.importValue(`${stackPrefix}-Database:ExportsOutputRefVpc2PrivateSubnet2Subnet3BA0F39BC92BF43A`),
+  ],
+  lambdaSecurityGroupId: cdk.Fn.importValue(`${stackPrefix}-Database:ExportsOutputFnGetAttLambdaSecurityGroup0BD9FC99GroupId34A98CFB`),
+  description: 'Stock Picker WebSocket Stack - WebSocket API Gateway',
+});
+
+// API Stack (with WebSocket integration)
 const apiStack = new ApiStack(app, `${stackPrefix}-Api`, {
   env,
   environment,
@@ -35,6 +57,8 @@ const apiStack = new ApiStack(app, `${stackPrefix}-Api`, {
   dbProxy: databaseStack.dbProxy,
   lambdaSecurityGroup: databaseStack.lambdaSecurityGroup,
   vpc: databaseStack.vpc,
+  websocketApiId: '75el4li1o3', // From WebSocket stack deployment
+  connectionsTableName: 'stockpicker-production-connections', // From WebSocket stack deployment
   description: 'Stock Picker API Stack - Lambda + API Gateway',
 });
 
@@ -50,12 +74,17 @@ const frontendStack = new FrontendStack(app, `${stackPrefix}-Frontend`, {
 const schedulerStack = new SchedulerStack(app, `${stackPrefix}-Scheduler`, {
   env,
   environment,
-  apiUrl: apiStack.apiUrl,
-  description: 'Stock Picker Scheduler Stack - EventBridge Rules',
+  vpc: databaseStack.vpc,
+  lambdaSecurityGroup: databaseStack.lambdaSecurityGroup,
+  databaseSecret: databaseStack.databaseSecret,
+  databaseHost: databaseStack.database.instanceEndpoint.hostname,
+  description: 'Stock Picker Scheduler Stack - Automated Trading Jobs',
 });
 
 // Add dependencies
+webSocketStack.addDependency(databaseStack);
 apiStack.addDependency(databaseStack);
+apiStack.addDependency(webSocketStack); // API needs WebSocket for broadcasting
 frontendStack.addDependency(apiStack);
 schedulerStack.addDependency(apiStack);
 

@@ -3,10 +3,11 @@ import { Card, CardHeader, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { apiClient } from '../../lib/api-client';
-import type { Backtest, BacktestTrade } from '@stock-picker/shared';
+import type { Backtest, BacktestTrade, Strategy } from '@stock-picker/shared';
 import { BacktestStatus } from '@stock-picker/shared';
 import { TrendingUp, TrendingDown, Activity, Trash2 } from 'lucide-react';
 import { formatCurrency, formatPercent } from '@stock-picker/shared';
+import { BacktestInsights } from './BacktestInsights';
 
 interface BacktestResultsProps {
   backtest: Backtest;
@@ -17,6 +18,8 @@ export function BacktestResults({ backtest, onDelete }: BacktestResultsProps) {
   const [trades, setTrades] = useState<BacktestTrade[]>([]);
   const [loadingTrades, setLoadingTrades] = useState(false);
   const [showTrades, setShowTrades] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
+  const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -24,6 +27,12 @@ export function BacktestResults({ backtest, onDelete }: BacktestResultsProps) {
       loadTrades();
     }
   }, [showTrades]);
+
+  useEffect(() => {
+    if (showInsights && !strategy && backtest.config.strategyId) {
+      loadStrategy();
+    }
+  }, [showInsights]);
 
   const loadTrades = async () => {
     setLoadingTrades(true);
@@ -34,6 +43,17 @@ export function BacktestResults({ backtest, onDelete }: BacktestResultsProps) {
       console.error('Failed to load backtest trades:', error);
     } finally {
       setLoadingTrades(false);
+    }
+  };
+
+  const loadStrategy = async () => {
+    try {
+      if (backtest.config.strategyId) {
+        const strategyData = await apiClient.getStrategy(backtest.config.strategyId);
+        setStrategy(strategyData);
+      }
+    } catch (error) {
+      console.error('Failed to load strategy:', error);
     }
   };
 
@@ -190,20 +210,49 @@ export function BacktestResults({ backtest, onDelete }: BacktestResultsProps) {
         {/* Trades Section */}
         {backtest.status === BacktestStatus.COMPLETED && (
           <div className="mt-4">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowTrades(!showTrades)}
-            >
-              {showTrades ? 'Hide' : 'Show'} Trades ({performance?.totalTrades || 0})
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowTrades(!showTrades)}
+              >
+                {showTrades ? 'Hide' : 'Show'} Trades ({performance?.totalTrades || 0})
+              </Button>
+              {performance?.totalTrades === 0 && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowInsights(!showInsights)}
+                >
+                  {showInsights ? 'Hide' : 'Show'} Insights
+                </Button>
+              )}
+            </div>
+
+            {showInsights && performance?.totalTrades === 0 && (
+              <div className="mt-4">
+                <BacktestInsights backtest={backtest} strategy={strategy || undefined} />
+              </div>
+            )}
 
             {showTrades && (
               <div className="mt-4">
                 {loadingTrades ? (
                   <p className="text-center text-gray-500 py-4">Loading trades...</p>
                 ) : trades.length === 0 ? (
-                  <p className="text-center text-gray-500 py-4">No trades executed</p>
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-3">No trades executed</p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setShowInsights(true);
+                        setShowTrades(false);
+                      }}
+                    >
+                      View Insights
+                    </Button>
+                  </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { BacktestRunner } from '../components/backtest/BacktestRunner';
@@ -7,10 +7,11 @@ import { BacktestResults } from '../components/backtest/BacktestResults';
 import { apiClient } from '../lib/api-client';
 import type { Backtest, Strategy } from '@stock-picker/shared';
 import { BacktestStatus } from '@stock-picker/shared';
-import { TrendingUp, Plus, RefreshCw } from 'lucide-react';
+import { TrendingUp, Plus, RefreshCw, GitCompare } from 'lucide-react';
 
 export function BacktestsPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const strategyIdFromUrl = searchParams.get('strategyId');
 
   const [backtests, setBacktests] = useState<Backtest[]>([]);
@@ -114,6 +115,13 @@ export function BacktestsPage() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <Button
+            variant="secondary"
+            onClick={() => navigate('/backtests/compare')}
+          >
+            <GitCompare className="w-4 h-4 mr-2" />
+            Compare
+          </Button>
           <Button variant="secondary" onClick={loadData}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import { usePortfolioStore } from '../store/portfolio-store';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -9,17 +10,45 @@ import { formatCurrency, formatPercent } from '@stock-picker/shared';
 import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
 
 export function PortfoliosPage() {
+  const { isAuthenticated, isLoading: authLoading, loginWithRedirect } = useAuth0();
   const { portfolios, fetchPortfolios, loading } = usePortfolioStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
-    fetchPortfolios();
-  }, []);
+    if (isAuthenticated && !authLoading) {
+      fetchPortfolios();
+    }
+  }, [isAuthenticated, authLoading]);
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Card>
+          <div className="text-center py-12 px-6">
+            <Plus className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Portfolios</h2>
+            <p className="text-gray-600 mb-6">Please log in to view and manage your portfolios</p>
+            <Button onClick={() => loginWithRedirect()}>
+              Login to Continue
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading && portfolios.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-gray-500">Loading portfolios...</div>
       </div>
     );
   }

@@ -3,6 +3,7 @@
  */
 
 import { alphaVantageClient } from '../integrations/alpha-vantage/client.js';
+import { fmpClient } from '../integrations/fmp/client.js';
 import { query } from '../config/database.js';
 import { logger } from '../utils/logger.js';
 
@@ -17,8 +18,8 @@ export class PriceDataService {
     logger.info('Loading historical prices', { symbol, outputSize });
 
     try {
-      // Get data from Alpha Vantage
-      const data = await alphaVantageClient.getDailyAdjusted(symbol, outputSize);
+      // Get data from Alpha Vantage (using free tier TIME_SERIES_DAILY endpoint)
+      const data = await alphaVantageClient.getDailyTimeSeries(symbol, outputSize);
 
       if (data.length === 0) {
         logger.warn('No data returned for symbol', { symbol });
@@ -68,8 +69,7 @@ export class PriceDataService {
             high = EXCLUDED.high,
             low = EXCLUDED.low,
             close = EXCLUDED.close,
-            volume = EXCLUDED.volume,
-            updated_at = NOW()
+            volume = EXCLUDED.volume
         `;
 
         await query(insertQuery, values);
@@ -85,6 +85,127 @@ export class PriceDataService {
       logger.error('Failed to load historical prices', { symbol, error });
       throw error;
     }
+  }
+
+  /**
+   * Load historical prices from FMP and store in database
+   */
+  async loadHistoricalPricesFromFMP(
+    symbol: string,
+    fromDate?: string,
+    toDate?: string
+  ): Promise<number> {
+    logger.info('Loading historical prices from FMP', { symbol, fromDate, toDate });
+
+    try {
+      // Get data from FMP
+      const data = await fmpClient.getHistoricalPrices(symbol, fromDate, toDate);
+
+      if (data.length === 0) {
+        logger.warn('No data returned from FMP for symbol', { symbol });
+        return 0;
+      }
+
+      // Check if symbol exists in stocks table
+      const stockCheck = await query(
+        'SELECT symbol FROM stocks WHERE symbol = $1',
+        [symbol]
+      );
+
+      if (stockCheck.rows.length === 0) {
+        logger.warn('Symbol not found in stocks table', { symbol });
+        throw new Error(`Symbol ${symbol} not found in database. Add it to stocks table first.`);
+      }
+
+      // Delete existing prices for this symbol (to handle updates)
+      await query('DELETE FROM stock_prices WHERE symbol = $1', [symbol]);
+
+      // Batch insert prices
+      const values: any[] = [];
+      const placeholders: string[] = [];
+
+      data.forEach((price, index) => {
+        const offset = index * 7;
+        placeholders.push(
+          `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7})`
+        );
+        values.push(
+          symbol,
+          price.date,
+          price.open,
+          price.high,
+          price.low,
+          price.close,
+          price.volume
+        );
+      });
+
+      if (placeholders.length > 0) {
+        const insertQuery = `
+          INSERT INTO stock_prices (symbol, timestamp, open, high, low, close, volume)
+          VALUES ${placeholders.join(', ')}
+          ON CONFLICT (symbol, timestamp) DO UPDATE SET
+            open = EXCLUDED.open,
+            high = EXCLUDED.high,
+            low = EXCLUDED.low,
+            close = EXCLUDED.close,
+            volume = EXCLUDED.volume
+        `;
+
+        await query(insertQuery, values);
+      }
+
+      logger.info('Historical prices loaded successfully from FMP', {
+        symbol,
+        dataPoints: data.length,
+      });
+
+      return data.length;
+    } catch (error) {
+      logger.error('Failed to load historical prices from FMP', { symbol, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Load historical prices for multiple symbols from FMP
+   */
+  async loadBulkHistoricalPricesFromFMP(
+    symbols: string[],
+    fromDate?: string,
+    toDate?: string
+  ): Promise<{ symbol: string; count: number; error?: string }[]> {
+    logger.info('Loading bulk historical prices from FMP', {
+      symbolCount: symbols.length,
+      fromDate,
+      toDate,
+    });
+
+    const results: { symbol: string; count: number; error?: string }[] = [];
+
+    for (const symbol of symbols) {
+      try {
+        const count = await this.loadHistoricalPricesFromFMP(symbol, fromDate, toDate);
+        results.push({ symbol, count });
+
+        // Small delay between requests to respect FMP rate limits (250/day)
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      } catch (error: any) {
+        logger.error('Failed to load prices from FMP for symbol', {
+          symbol,
+          error: error.message,
+        });
+        results.push({ symbol, count: 0, error: error.message });
+      }
+    }
+
+    logger.info('Bulk historical prices load complete from FMP', {
+      total: symbols.length,
+      successful: results.filter((r) => !r.error).length,
+      failed: results.filter((r) => r.error).length,
+    });
+
+    return results;
   }
 
   /**
@@ -106,8 +227,8 @@ export class PriceDataService {
         const count = await this.loadHistoricalPrices(symbol, outputSize);
         results.push({ symbol, count });
 
-        // Small delay between requests to respect rate limits
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Delay between requests to respect Alpha Vantage free tier rate limit (1 request/second)
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       } catch (error: any) {
         logger.error('Failed to load prices for symbol', {
           symbol,
@@ -306,6 +427,34 @@ export class PriceDataService {
 
     logger.info('Sample prices generated for date range', { symbol, dayCount });
     return dayCount;
+  }
+
+  /**
+   * Get batch quotes for multiple symbols
+   */
+  async getBatchQuotes(symbols: string[]): Promise<Record<string, { price: number; change: number; changePercent: number }>> {
+    logger.info('Fetching batch quotes', { symbolCount: symbols.length });
+
+    try {
+      // Use FMP for batch quotes (supports multiple symbols)
+      const quotes = await fmpClient.getBatchQuotes(symbols);
+
+      const result: Record<string, { price: number; change: number; changePercent: number }> = {};
+
+      for (const quote of quotes) {
+        result[quote.symbol] = {
+          price: quote.price,
+          change: quote.change,
+          changePercent: quote.changesPercentage,
+        };
+      }
+
+      logger.info('Batch quotes fetched successfully', { symbolCount: Object.keys(result).length });
+      return result;
+    } catch (error) {
+      logger.error('Failed to fetch batch quotes', { error, symbols });
+      throw error;
+    }
   }
 }
 

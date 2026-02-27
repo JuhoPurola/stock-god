@@ -11,6 +11,25 @@ import { logger } from '../utils/logger.js';
 const stockRepo = new StockRepository();
 
 /**
+ * List all tradable stocks
+ */
+export async function listStocks(
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> {
+  try {
+    const limit = parseInt(getQueryParam(event, 'limit', '100') || '100');
+    const stocks = await stockRepo.findTradable(limit);
+
+    return createApiResponse(200, { stocks });
+  } catch (error) {
+    logger.error('List stocks error', error);
+    return createApiResponse(500, {
+      error: 'Failed to list stocks',
+    });
+  }
+}
+
+/**
  * Search stocks
  */
 export async function searchStocks(

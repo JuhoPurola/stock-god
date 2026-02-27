@@ -18,7 +18,7 @@ import type {
 } from '@stock-picker/shared';
 import { BacktestStatus, SignalType, OrderSide } from '@stock-picker/shared';
 import { query } from '../config/database.js';
-import { MomentumStrategy } from '@stock-picker/algorithm-engine';
+import { Strategy as BaseStrategy, MomentumStrategy, SmallCapAlphaStrategy } from '@stock-picker/algorithm-engine';
 
 /**
  * Backtest Engine
@@ -40,8 +40,10 @@ export class BacktestService {
     });
 
     try {
-      // Initialize strategy
-      const strategy = new MomentumStrategy(strategyConfig);
+      // Initialize strategy based on name
+      const strategy = strategyConfig.name?.includes('Alpha Hunter')
+        ? new SmallCapAlphaStrategy(strategyConfig)
+        : new MomentumStrategy(strategyConfig);
 
       // Initialize portfolio state
       const portfolioState: BacktestPortfolioState = {
@@ -203,7 +205,7 @@ export class BacktestService {
    * Generate trading signals from strategy
    */
   private async generateSignals(
-    strategy: MomentumStrategy,
+    strategy: BaseStrategy,
     strategyConfig: StrategyConfig,
     priceData: Map<string, Map<string, number>>,
     currentDate: string,

@@ -388,6 +388,37 @@ export interface Alert {
   createdAt: Date;
 }
 
+export interface UserAlertPreferences {
+  userId: string;
+  emailNotifications: boolean;
+  browserNotifications: boolean;
+  tradeAlerts: boolean;
+  priceAlerts: boolean;
+  strategyAlerts: boolean;
+  riskAlerts: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export enum PriceCondition {
+  ABOVE = 'above',
+  BELOW = 'below',
+  PERCENT_CHANGE = 'percent_change',
+}
+
+export interface PriceAlert {
+  id: string;
+  userId: string;
+  symbol: string;
+  condition: PriceCondition;
+  targetPrice?: number;
+  percentChange?: number;
+  triggered: boolean;
+  active: boolean;
+  createdAt: Date;
+  triggeredAt?: Date;
+}
+
 // ============================================================================
 // User
 // ============================================================================

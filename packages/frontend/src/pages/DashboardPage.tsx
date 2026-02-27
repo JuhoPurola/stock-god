@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import { usePortfolioStore } from '../store/portfolio-store';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -7,20 +8,47 @@ import { formatCurrency, formatPercent } from '@stock-picker/shared';
 import { TrendingUp, TrendingDown, DollarSign, Briefcase } from 'lucide-react';
 
 export function DashboardPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth0();
   const { portfolios, fetchPortfolios, loading } = usePortfolioStore();
 
   useEffect(() => {
-    fetchPortfolios();
-  }, []);
+    if (isAuthenticated && !authLoading) {
+      fetchPortfolios();
+    }
+  }, [isAuthenticated, authLoading]);
 
   const totalValue = portfolios.reduce((sum, p) => sum + p.totalValue, 0);
   const totalPnL = portfolios.reduce((sum, p) => sum + p.unrealizedPnL, 0);
   const totalPnLPercent = totalValue > 0 ? (totalPnL / totalValue) * 100 : 0;
 
-  if (loading && portfolios.length === 0) {
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Card>
+          <CardContent>
+            <div className="text-center py-12">
+              <Briefcase className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Stock Picker</h2>
+              <p className="text-gray-600 mb-6">Please log in to view your dashboard and manage portfolios</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading && portfolios.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading portfolios...</div>
       </div>
     );
   }

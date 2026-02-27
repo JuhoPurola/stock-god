@@ -17,7 +17,12 @@ export async function seedDemoData(
   try {
     logger.info('Starting demo data seeding...');
 
-    const symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'];
+    // Accept symbols from query parameter or use defaults
+    const symbolsParam = event.queryStringParameters?.symbols;
+    const symbols = symbolsParam
+      ? symbolsParam.split(',').map(s => s.trim())
+      : ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'];
+
     // Generate data for 2024 (entire year)
     const startDate = new Date('2024-01-01');
     const endDate = new Date('2024-12-31');

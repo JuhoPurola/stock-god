@@ -313,3 +313,35 @@ export interface StrategySignalEvent {
   portfolioId: string;
   signal: Signal;
 }
+
+// ============================================================================
+// WebSocket Connection & Messages
+// ============================================================================
+
+export interface WebSocketConnection {
+  connectionId: string;
+  userId: string;
+  portfolioId?: string;
+  connectedAt: string;
+  ttl: number;
+}
+
+export enum WebSocketMessageAction {
+  SUBSCRIBE = 'subscribe',
+  UNSUBSCRIBE = 'unsubscribe',
+  PING = 'ping',
+}
+
+export interface WebSocketMessage {
+  action: WebSocketMessageAction;
+  payload?: {
+    portfolioId?: string;
+    symbols?: string[];
+  };
+}
+
+export interface WebSocketMessageResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}

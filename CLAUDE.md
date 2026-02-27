@@ -198,14 +198,22 @@ Required variables (see `.env.example`):
 - Migration and seed scripts
 
 ### 🚧 In Progress
-- Backend API and repository layer
-- Alpaca broker integration
-- React frontend setup
-- AWS CDK infrastructure
+- Alert system implementation (Phase 2)
 
 ### ⏳ Pending
-- Backtesting engine
-- Performance analytics
-- WebSocket real-time updates
-- Alert system
-- Frontend UI components
+- Automated trading background jobs
+- Advanced performance analytics
+- Frontend polish and settings page
+
+### ✅ Recently Completed
+- WebSocket real-time updates (Phase 1 - Feb 2026)
+  - Auth0 JWT authentication
+  - Auto-reconnect with exponential backoff
+  - Real-time trade and portfolio updates
+  - DynamoDB connection management
+  - Broadcasting infrastructure
+- Backtesting engine (fully functional)
+- Backend API and repository layer
+- Alpaca broker integration
+- React frontend with Auth0
+- AWS CDK infrastructure
