@@ -5,9 +5,10 @@ import { Button } from '../ui/Button';
 import { apiClient } from '../../lib/api-client';
 import type { Backtest, BacktestTrade, Strategy } from '@stock-picker/shared';
 import { BacktestStatus } from '@stock-picker/shared';
-import { TrendingUp, TrendingDown, Activity, Trash2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, Trash2, BarChart3 } from 'lucide-react';
 import { formatCurrency, formatPercent } from '@stock-picker/shared';
 import { BacktestInsights } from './BacktestInsights';
+import BacktestChart from './BacktestChart';
 
 interface BacktestResultsProps {
   backtest: Backtest;
@@ -18,15 +19,16 @@ export function BacktestResults({ backtest, onDelete }: BacktestResultsProps) {
   const [trades, setTrades] = useState<BacktestTrade[]>([]);
   const [loadingTrades, setLoadingTrades] = useState(false);
   const [showTrades, setShowTrades] = useState(false);
+  const [showChart, setShowChart] = useState(false);
   const [showInsights, setShowInsights] = useState(false);
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (showTrades && trades.length === 0) {
+    if ((showTrades || showChart) && trades.length === 0) {
       loadTrades();
     }
-  }, [showTrades]);
+  }, [showTrades, showChart]);
 
   useEffect(() => {
     if (showInsights && !strategy && backtest.config.strategyId) {
@@ -214,6 +216,14 @@ export function BacktestResults({ backtest, onDelete }: BacktestResultsProps) {
               <Button
                 variant="secondary"
                 size="sm"
+                onClick={() => setShowChart(!showChart)}
+              >
+                <BarChart3 className="w-4 h-4 mr-1" />
+                {showChart ? 'Hide' : 'Show'} Chart
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowTrades(!showTrades)}
               >
                 {showTrades ? 'Hide' : 'Show'} Trades ({performance?.totalTrades || 0})
@@ -232,6 +242,21 @@ export function BacktestResults({ backtest, onDelete }: BacktestResultsProps) {
             {showInsights && performance?.totalTrades === 0 && (
               <div className="mt-4">
                 <BacktestInsights backtest={backtest} strategy={strategy || undefined} />
+              </div>
+            )}
+
+            {showChart && (
+              <div className="mt-4">
+                {loadingTrades ? (
+                  <p className="text-center text-gray-500 py-4">Loading chart...</p>
+                ) : trades.length > 0 ? (
+                  <BacktestChart
+                    symbol={trades[0]?.symbol || 'Unknown'}
+                    trades={trades}
+                  />
+                ) : (
+                  <p className="text-center text-gray-500 py-4">No trades to display on chart</p>
+                )}
               </div>
             )}
 
