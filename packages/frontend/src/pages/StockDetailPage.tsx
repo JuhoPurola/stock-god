@@ -9,6 +9,7 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { formatCompactNumber, OrderSide } from '@stock-picker/shared';
 import type { Stock, StockQuote, PortfolioWithStats } from '@stock-picker/shared';
 import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react';
+import ChartContainer from '../components/charts/ChartContainer';
 
 export function StockDetailPage() {
   const { symbol } = useParams<{ symbol: string }>();
@@ -179,6 +180,9 @@ export function StockDetailPage() {
           </div>
         </div>
       </Card>
+
+      {/* Price Chart */}
+      <ChartContainer symbol={symbol!} />
 
       {/* Trade Form */}
       {stock.tradable && (

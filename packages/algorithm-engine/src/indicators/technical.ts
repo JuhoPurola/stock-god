@@ -205,3 +205,66 @@ export function getValue(arr: number[], index: number): number | null {
   const value = arr[index];
   return value !== undefined && !isNaN(value) ? value : null;
 }
+
+/**
+ * Calculate Stochastic Oscillator
+ */
+export interface StochasticResult {
+  k: number[];
+  d: number[];
+}
+
+export function calculateStochastic(
+  bars: PriceBar[],
+  kPeriod: number = 14,
+  dPeriod: number = 3
+): StochasticResult {
+  const k: number[] = [];
+
+  for (let i = 0; i < bars.length; i++) {
+    if (i < kPeriod - 1) {
+      k.push(NaN);
+      continue;
+    }
+
+    const slice = bars.slice(i - kPeriod + 1, i + 1);
+    const high = Math.max(...slice.map(b => b.high));
+    const low = Math.min(...slice.map(b => b.low));
+    const close = bars[i]!.close;
+
+    const stoch = high === low ? 50 : ((close - low) / (high - low)) * 100;
+    k.push(stoch);
+  }
+
+  // Calculate %D (SMA of %K)
+  const validK = k.map(v => isNaN(v) ? 0 : v);
+  const d = calculateSMA(validK, dPeriod).map((v, i) => isNaN(k[i]!) ? NaN : v);
+
+  return { k, d };
+}
+
+/**
+ * Calculate VWAP (Volume Weighted Average Price)
+ */
+export interface VWAPBar extends PriceBar {
+  volume: number;
+}
+
+export function calculateVWAP(bars: VWAPBar[]): number[] {
+  const vwap: number[] = [];
+  let cumulativeTPV = 0; // Typical Price * Volume
+  let cumulativeVolume = 0;
+
+  for (let i = 0; i < bars.length; i++) {
+    const bar = bars[i]!;
+    const typicalPrice = (bar.high + bar.low + bar.close) / 3;
+    const tpv = typicalPrice * bar.volume;
+
+    cumulativeTPV += tpv;
+    cumulativeVolume += bar.volume;
+
+    vwap.push(cumulativeVolume > 0 ? cumulativeTPV / cumulativeVolume : NaN);
+  }
+
+  return vwap;
+}
