@@ -20,6 +20,8 @@ import { BacktestComparisonPage } from './pages/BacktestComparisonPage';
 import { StockDataDashboard } from './pages/StockDataDashboard';
 import { StrategyOptimizerPage } from './pages/StrategyOptimizerPage';
 import { LiveSignalDashboard } from './pages/LiveSignalDashboard';
+import { PerformanceAnalyticsPage } from './pages/PerformanceAnalyticsPage';
+import { PortfolioComparisonPage } from './pages/PortfolioComparisonPage';
 import AlertsPage from './pages/AlertsPage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -50,6 +52,8 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/portfolios" element={<PortfoliosPage />} />
               <Route path="/portfolios/:id" element={<EnhancedPortfolioDetailPage />} />
+              <Route path="/portfolios/:portfolioId/analytics" element={<PerformanceAnalyticsPage />} />
+              <Route path="/portfolios/compare" element={<PortfolioComparisonPage />} />
               <Route path="/portfolios/:portfolioId/strategies" element={<StrategiesPage />} />
               <Route path="/strategies/:id" element={<StrategyDetailPage />} />
               <Route path="/strategy-optimizer" element={<StrategyOptimizerPage />} />

@@ -1,0 +1,204 @@
+STOCK PICKER - VIDEO STORYBOARD
+================================
+
+SHOT 1: INTRO (0:00-0:30)
+┌─────────────────────────────────┐
+│                                 │
+│      [LOGO / DASHBOARD]         │
+│                                 │
+│   Text: "Stock Picker"          │
+│   "Algorithmic Trading"         │
+│                                 │
+└─────────────────────────────────┘
+Action: Pan across dashboard
+Audio: "Welcome to Stock Picker..."
+
+---
+
+SHOT 2: DASHBOARD (0:30-1:00)
+┌─────────────────────────────────┐
+│  Portfolio 1  Portfolio 2       │
+│  $50k +12%    $35k +8%          │
+│                                 │
+│  Portfolio 3  Portfolio 4       │
+│  $75k +6%     $25k +15%         │
+└─────────────────────────────────┘
+Action: Hover over portfolios
+Audio: "Create multiple portfolios..."
+
+---
+
+SHOT 3: PORTFOLIO DETAIL (1:00-2:00)
+┌─────────────────────────────────┐
+│  [Performance Chart]            │
+│  ─────/\──/\───────             │
+│                                 │
+│  [Position Cards]               │
+│  AAPL  GOOGL  MSFT             │
+│  +5%   -2%    +8%              │
+└─────────────────────────────────┘
+Action: Show chart, toggle views
+Audio: "Complete view of holdings..."
+
+---
+
+SHOT 4: ANALYTICS (2:00-2:45)
+┌─────────────────────────────────┐
+│  Sharpe: 1.24   VaR: $234      │
+│  Sortino: 1.12  Max DD: -5.6%  │
+│                                 │
+│  Win Rate: 65%                  │
+│  Profit Factor: 1.85            │
+└─────────────────────────────────┘
+Action: Highlight metrics, change period
+Audio: "Institutional-grade analytics..."
+
+---
+
+SHOT 5: COMPARISON (2:45-3:30)
+┌─────────────────────────────────┐
+│   Portfolio 1  Portfolio 2      │
+│   ████████     ████████         │
+│   Portfolio 3                   │
+│   ████████                      │
+│                                 │
+│   [Bar Charts]                  │
+└─────────────────────────────────┘
+Action: Select portfolios, show charts
+Audio: "Compare up to 4 portfolios..."
+
+---
+
+SHOT 6: STRATEGY (3:30-4:15)
+┌─────────────────────────────────┐
+│  Momentum Strategy [ENABLED]    │
+│                                 │
+│  ✓ RSI Factor (0.4)            │
+│  ✓ MACD Factor (0.3)           │
+│  ✓ MA Crossover (0.3)          │
+│                                 │
+│  Stop Loss: 5%                  │
+└─────────────────────────────────┘
+Action: Show factors, risk settings
+Audio: "Composable strategy engine..."
+
+---
+
+SHOT 7: BACKTEST (4:15-5:00)
+┌─────────────────────────────────┐
+│  [Equity Curve]                 │
+│  ─────────/\─────/\───          │
+│                                 │
+│  Return: +23.4%                 │
+│  Win Rate: 62%                  │
+│  Max DD: -8.2%                  │
+└─────────────────────────────────┘
+Action: Show results, equity curve
+Audio: "Test before you trade..."
+
+---
+
+SHOT 8: TRADE MODAL (5:00-5:30)
+┌─────────────────────────────────┐
+│   Execute Trade                 │
+│   ┌─────────────────┐          │
+│   │ Symbol: AAPL    │          │
+│   │ Qty: 10         │          │
+│   │ Type: Market    │          │
+│   │                 │          │
+│   │  [Execute]      │          │
+│   └─────────────────┘          │
+└─────────────────────────────────┘
+Action: Fill form, execute
+Audio: "Execute trades manually..."
+
+---
+
+SHOT 9: TRADE HISTORY (5:30-6:00)
+┌─────────────────────────────────┐
+│  Date    Symbol  Side  Price    │
+│  ─────────────────────────────  │
+│  3/4     AAPL    BUY   $150.25 │
+│  3/3     GOOGL   SELL  $142.80 │
+│  3/2     MSFT    BUY   $380.00 │
+│                                 │
+│         [Export CSV]            │
+└─────────────────────────────────┘
+Action: Show trades, click export
+Audio: "Complete trading history..."
+
+---
+
+SHOT 10: ALERTS (6:00-6:30)
+┌─────────────────────────────────┐
+│  Header:  [🔔 3]                │
+│           ↓                     │
+│  ┌─────────────────────┐       │
+│  │ Trade Executed      │       │
+│  │ Stop Loss Hit       │       │
+│  │ Price Alert         │       │
+│  └─────────────────────┘       │
+└─────────────────────────────────┘
+Action: Click bell, show alerts
+Audio: "Real-time notifications..."
+
+---
+
+SHOT 11: PRICE ALERT (6:30-7:00)
+┌─────────────────────────────────┐
+│   Create Price Alert            │
+│   ┌─────────────────┐          │
+│   │ Symbol: TSLA    │          │
+│   │ Condition: ↑    │          │
+│   │ Target: $250    │          │
+│   │                 │          │
+│   │  [Create]       │          │
+│   └─────────────────┘          │
+└─────────────────────────────────┘
+Action: Fill form, create alert
+Audio: "Custom price alerts..."
+
+---
+
+SHOT 12: AUTOMATION (7:00-7:30)
+┌─────────────────────────────────┐
+│   Text Overlay:                 │
+│                                 │
+│   ⚡ Strategy Execution (15m)   │
+│   💰 Price Updates (5m)         │
+│   📊 Order Status (1m)          │
+│   🔄 Position Sync (5m)         │
+│   📸 Snapshots (Daily)          │
+└─────────────────────────────────┘
+Action: Show text with icons
+Audio: "Five scheduled jobs..."
+
+---
+
+SHOT 13: DARK MODE (8:00-8:15)
+┌─────────────────────────────────┐
+│  Light Mode                     │
+│  ☀️ → 🌙                       │
+│  Dark Mode                      │
+│  (Show transition)              │
+└─────────────────────────────────┘
+Action: Toggle theme
+Audio: "Dark mode for late nights..."
+
+---
+
+SHOT 14: OUTRO (8:45-9:00)
+┌─────────────────────────────────┐
+│                                 │
+│    Stock Picker                 │
+│    Trade Systematically         │
+│                                 │
+│    stockpicker.app              │
+│    [Start Free Trial]           │
+└─────────────────────────────────┘
+Action: Fade to logo, show CTA
+Audio: "Ready to start? Sign up today."
+
+===================================
+TOTAL: ~9 minutes, 14 shots
+===================================

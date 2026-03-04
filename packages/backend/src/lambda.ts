@@ -19,6 +19,7 @@ import * as demoLoadRealPricesHandlers from './handlers/demo-load-real-prices.ha
 import * as demoMicroCapBacktestHandlers from './handlers/demo-micro-cap-backtest.handler.js';
 import * as demoSetupHandlers from './handlers/demo-setup.handler.js';
 import * as demoMigrateUserHandlers from './handlers/demo-migrate-user.handler.js';
+import * as analyticsHandlers from './handlers/analytics.handler.js';
 
 // WebSocket handlers are exported separately
 export {
@@ -65,6 +66,10 @@ const routes: Record<string, Record<string, (event: APIGatewayProxyEvent) => Pro
   'GET /backtests/{id}/trades': { handler: backtestHandlers.getBacktestTrades },
   'DELETE /backtests/{id}': { handler: backtestHandlers.deleteBacktest },
   'GET /portfolios/{portfolioId}/backtests': { handler: backtestHandlers.listPortfolioBacktests },
+  'GET /portfolios/{portfolioId}/analytics/performance': { handler: analyticsHandlers.getPortfolioPerformance },
+  'GET /portfolios/{portfolioId}/analytics/metrics': { handler: analyticsHandlers.getCachedMetrics },
+  'POST /portfolios/{portfolioId}/analytics/calculate': { handler: analyticsHandlers.calculateAndSaveMetrics },
+  'GET /portfolios/{portfolioId}/analytics/summary': { handler: analyticsHandlers.getPerformanceSummary },
   'GET /alerts': { handler: alertHandlers.getAlerts },
   'GET /alerts/count/unread': { handler: alertHandlers.getUnreadCount },
   'GET /alerts/preferences': { handler: alertHandlers.getPreferences },

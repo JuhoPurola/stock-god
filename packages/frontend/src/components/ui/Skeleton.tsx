@@ -1,147 +1,88 @@
 /**
- * Enhanced skeleton loading components with shimmer effect
+ * Skeleton loading component
+ * Shows placeholder UI while content loads
  */
+
+import React from 'react';
 
 interface SkeletonProps {
   className?: string;
-  width?: string;
-  height?: string;
+  variant?: 'text' | 'circular' | 'rectangular';
+  width?: string | number;
+  height?: string | number;
+  animation?: 'pulse' | 'wave' | 'none';
 }
 
-export function Skeleton({ className = '', width, height }: SkeletonProps) {
-  const style: React.CSSProperties = {};
-  if (width) style.width = width;
-  if (height) style.height = height;
+export const Skeleton: React.FC<SkeletonProps> = ({
+  className = '',
+  variant = 'text',
+  width,
+  height,
+  animation = 'pulse',
+}) => {
+  const baseClasses = 'bg-gray-200 dark:bg-gray-700';
+
+  const variantClasses = {
+    text: 'rounded h-4',
+    circular: 'rounded-full',
+    rectangular: 'rounded-md',
+  };
+
+  const animationClasses = {
+    pulse: 'animate-pulse',
+    wave: 'animate-shimmer',
+    none: '',
+  };
+
+  const styles: React.CSSProperties = {
+    width: width || (variant === 'text' ? '100%' : undefined),
+    height: height || undefined,
+  };
 
   return (
     <div
-      className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className}`}
-      style={style}
+      className={`${baseClasses} ${variantClasses[variant]} ${animationClasses[animation]} ${className}`}
+      style={styles}
     />
   );
-}
+};
 
-export function CardSkeleton() {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
-      <Skeleton className="h-6 w-3/5" />
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-4 w-4/5" />
-      <div className="flex gap-4 pt-4">
-        <Skeleton className="h-8 w-24" />
-        <Skeleton className="h-8 w-24" />
-      </div>
-    </div>
-  );
-}
+export const CardSkeleton: React.FC<{ lines?: number }> = ({ lines = 3 }) => (
+  <div className="bg-white rounded-lg shadow p-6 space-y-4">
+    <Skeleton width="60%" height={24} />
+    {Array.from({ length: lines }).map((_, i) => (
+      <Skeleton key={i} height={16} />
+    ))}
+  </div>
+);
 
-export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-      {/* Header */}
-      <div className="bg-gray-50 dark:bg-gray-900 p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
-          {Array.from({ length: columns }).map((_, i) => (
-            <Skeleton key={i} className="h-4" />
-          ))}
-        </div>
-      </div>
-      {/* Rows */}
-      {Array.from({ length: rows }).map((_, rowIndex) => (
-        <div
-          key={rowIndex}
-          className="p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
-        >
-          <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
-            {Array.from({ length: columns }).map((_, colIndex) => (
-              <Skeleton key={colIndex} className="h-4" />
-            ))}
-          </div>
-        </div>
+export const TableSkeleton: React.FC<{ rows?: number; columns?: number }> = ({
+  rows = 5,
+  columns = 4,
+}) => (
+  <div className="space-y-3">
+    <div className="flex gap-4">
+      {Array.from({ length: columns }).map((_, i) => (
+        <Skeleton key={`header-${i}`} width="25%" height={20} />
       ))}
     </div>
-  );
-}
-
-export function ChartSkeleton({ height = '400px' }: { height?: string }) {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-6 w-48" />
-        <div className="flex gap-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-8 w-16" />
-          ))}
-        </div>
-      </div>
-      <Skeleton height={height} className="w-full" />
-    </div>
-  );
-}
-
-export function PortfolioCardSkeleton() {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      <div className="flex items-center justify-between mb-4">
-        <Skeleton className="h-6 w-40" />
-        <Skeleton className="h-10 w-10 rounded-full" />
-      </div>
-      <div className="space-y-3">
-        <div className="flex justify-between">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-5 w-28" />
-        </div>
-        <div className="flex justify-between">
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-5 w-24" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function DashboardSkeleton() {
-  return (
-    <div className="space-y-6">
-      <Skeleton className="h-9 w-48" />
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <PortfolioCardSkeleton key={i} />
+    {Array.from({ length: rows }).map((_, rowIndex) => (
+      <div key={`row-${rowIndex}`} className="flex gap-4">
+        {Array.from({ length: columns }).map((_, colIndex) => (
+          <Skeleton key={`cell-${rowIndex}-${colIndex}`} width="25%" height={16} />
         ))}
       </div>
+    ))}
+  </div>
+);
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartSkeleton height="300px" />
-        <CardSkeleton />
-      </div>
-
-      {/* Table */}
-      <TableSkeleton rows={5} columns={4} />
+export const DashboardSkeleton: React.FC = () => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <CardSkeleton lines={2} />
+      <CardSkeleton lines={2} />
+      <CardSkeleton lines={2} />
     </div>
-  );
-}
-
-export function ListSkeleton({ items = 5 }: { items?: number }) {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: items }).map((_, i) => (
-        <div
-          key={i}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center justify-between"
-        >
-          <div className="flex items-center gap-4 flex-1">
-            <Skeleton className="h-12 w-12 rounded-full" />
-            <div className="space-y-2 flex-1">
-              <Skeleton className="h-5 w-2/5" />
-              <Skeleton className="h-4 w-3/5" />
-            </div>
-          </div>
-          <Skeleton className="h-8 w-20" />
-        </div>
-      ))}
-    </div>
-  );
-}
+    <CardSkeleton lines={5} />
+  </div>
+);

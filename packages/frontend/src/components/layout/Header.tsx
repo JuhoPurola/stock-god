@@ -1,7 +1,7 @@
 import { User, LogOut, LogIn } from 'lucide-react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { AlertBell } from '../alerts/AlertBell';
-import ThemeToggle from '../ui/ThemeToggle';
+import { ThemeToggle } from '../ui/ThemeToggle';
 
 export function Header() {
   const { user, isAuthenticated, isLoading, loginWithRedirect, logout } = useAuth0();

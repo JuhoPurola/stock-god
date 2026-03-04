@@ -11,7 +11,7 @@ import { PortfolioAllocation } from '../components/portfolio/PortfolioAllocation
 import { PositionCard } from '../components/portfolio/PositionCard';
 import { TradeModal } from '../components/portfolio/TradeModal';
 import type { PositionWithDetails, PortfolioSnapshot } from '@stock-picker/shared';
-import { Plus, Settings, TrendingUp, BarChart3, PieChart as PieChartIcon, Trash2 } from 'lucide-react';
+import { Plus, Settings, TrendingUp, BarChart3, PieChart as PieChartIcon, Trash2, LineChart } from 'lucide-react';
 
 export function EnhancedPortfolioDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -177,6 +177,12 @@ export function EnhancedPortfolioDetailPage() {
             <Plus className="w-4 h-4 mr-2" />
             New Trade
           </Button>
+          <Link to={`/portfolios/${id}/analytics`}>
+            <Button variant="secondary">
+              <LineChart className="w-4 h-4 mr-2" />
+              Analytics
+            </Button>
+          </Link>
           <Link to={`/portfolios/${id}/strategies`}>
             <Button>
               <Settings className="w-4 h-4 mr-2" />

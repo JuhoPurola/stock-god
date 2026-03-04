@@ -5,8 +5,11 @@
 
 import { getDatabasePool } from '../config/scheduler';
 import { JobMonitoringService } from '../services/job-monitoring.service';
+import { AlertService } from '../services/alert.service';
 import { alpacaClient } from '../integrations/alpaca/client.js';
 import { logger } from '../utils/logger.js';
+import { AlertType } from '@stock-picker/shared';
+import { Pool } from 'pg';
 
 export const handler = async (event: any) => {
   logger.info('Price update job triggered', { time: new Date().toISOString() });
@@ -105,9 +108,8 @@ export const handler = async (event: any) => {
       }
     }
 
-    // TODO: Check price alerts and trigger notifications
-    // This would involve checking price_alerts table and comparing current prices
-    // with alert conditions, then creating alerts via AlertService
+    // Check price alerts and trigger notifications
+    await checkPriceAlerts(pool, symbols);
 
     const metadata = {
       symbolsTotal: symbols.length,
@@ -140,3 +142,103 @@ export const handler = async (event: any) => {
     };
   }
 };
+
+/**
+ * Check price alerts and trigger notifications
+ */
+async function checkPriceAlerts(pool: Pool, symbols: string[]): Promise<void> {
+  try {
+    // Get active price alerts for the updated symbols
+    const alertsResult = await pool.query(
+      `SELECT pa.*, s.name as stock_name, sp.close as current_price
+       FROM price_alerts pa
+       JOIN stocks s ON pa.symbol = s.symbol
+       LEFT JOIN LATERAL (
+         SELECT close FROM stock_prices
+         WHERE symbol = pa.symbol
+         ORDER BY timestamp DESC LIMIT 1
+       ) sp ON true
+       WHERE pa.active = true
+         AND pa.triggered = false
+         AND pa.symbol = ANY($1::text[])`,
+      [symbols]
+    );
+
+    const alertService = new AlertService();
+    let triggeredCount = 0;
+
+    for (const alert of alertsResult.rows) {
+      const { id, user_id, symbol, condition, target_price, percent_change, current_price, stock_name } = alert;
+
+      if (!current_price) continue;
+
+      let shouldTrigger = false;
+      let message = '';
+
+      // Check if alert condition is met
+      if (condition === 'above' && target_price && current_price >= target_price) {
+        shouldTrigger = true;
+        message = `${stock_name} (${symbol}) is now $${current_price.toFixed(2)}, above your target of $${target_price.toFixed(2)}`;
+      } else if (condition === 'below' && target_price && current_price <= target_price) {
+        shouldTrigger = true;
+        message = `${stock_name} (${symbol}) is now $${current_price.toFixed(2)}, below your target of $${target_price.toFixed(2)}`;
+      } else if (condition === 'percent_change' && percent_change) {
+        // Get price from 24h ago
+        const dayAgoResult = await pool.query(
+          `SELECT close FROM stock_prices
+           WHERE symbol = $1
+             AND timestamp >= NOW() - INTERVAL '24 hours'
+           ORDER BY timestamp ASC LIMIT 1`,
+          [symbol]
+        );
+
+        if (dayAgoResult.rows.length > 0) {
+          const oldPrice = parseFloat(dayAgoResult.rows[0].close);
+          const actualChange = ((current_price - oldPrice) / oldPrice) * 100;
+
+          if (Math.abs(actualChange) >= Math.abs(percent_change)) {
+            shouldTrigger = true;
+            message = `${stock_name} (${symbol}) has changed ${actualChange >= 0 ? '+' : ''}${actualChange.toFixed(2)}% in 24 hours (now $${current_price.toFixed(2)})`;
+          }
+        }
+      }
+
+      if (shouldTrigger) {
+        // Create alert notification
+        await alertService.createAlert({
+          userId: user_id,
+          type: AlertType.PRICE_ALERT,
+          title: `Price Alert: ${symbol}`,
+          message,
+          severity: 'info',
+          metadata: {
+            symbol,
+            currentPrice: current_price,
+            targetPrice: target_price,
+            condition,
+            percentChange: percent_change,
+          },
+        });
+
+        // Mark price alert as triggered
+        await pool.query(
+          `UPDATE price_alerts
+           SET triggered = true, triggered_at = NOW()
+           WHERE id = $1`,
+          [id]
+        );
+
+        triggeredCount++;
+        logger.info('Price alert triggered', { alertId: id, symbol, userId: user_id });
+      }
+    }
+
+    logger.info('Price alert check complete', {
+      alertsChecked: alertsResult.rows.length,
+      alertsTriggered: triggeredCount,
+    });
+  } catch (error: any) {
+    logger.error('Failed to check price alerts', error);
+    // Don't throw - allow price update to succeed even if alert checking fails
+  }
+}
