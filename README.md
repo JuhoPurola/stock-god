@@ -2,6 +2,19 @@
 
 A comprehensive stock picking and algorithmic trading platform with backtesting capabilities.
 
+## 📚 Documentation
+
+**→ [📑 Documentation Master Index](DOCUMENTATION_INDEX.md)** - Complete navigation guide
+
+### Quick Access:
+
+- **[⚡ Quick Start](QUICK_START.md)** - Get up and running in 10 minutes
+- **[📖 User Guide](USER_GUIDE.md)** - Complete platform documentation
+- **[✨ Best Practices](BEST_PRACTICES.md)** - Optimize your trading strategies
+- **[❓ FAQ](FAQ.md)** - Quick answers to common questions
+- **[🎬 Video Scripts](VIDEO_SCRIPTS.md)** - Tutorial scripts for content creators
+- **[🔧 Development Guide](CLAUDE.md)** - For developers and contributors
+
 ## Features
 
 - 🤖 **Algorithmic Trading Engine**: Composable factor-based strategies
@@ -158,9 +171,75 @@ EventBridge triggers Lambda functions during market hours to:
 3. Execute trades via Alpaca
 4. Log results and send notifications
 
+## 📖 Documentation Overview
+
+### For Users
+
+**[Quick Start Guide](QUICK_START.md)**
+- Create your first portfolio (2 min)
+- Build a simple strategy (3 min)
+- Run a backtest (2 min)
+- Enable live trading (1 min)
+- Pre-built strategy templates
+
+**[Complete User Guide](USER_GUIDE.md)**
+- Dashboard overview
+- Portfolio management
+- Strategy builder (factors, weights, risk management)
+- Backtesting system
+- Live trading operations
+- Stock research & analysis
+- Performance analytics
+- Alerts & notifications
+- Advanced features (optimizer, real-time updates)
+- Troubleshooting
+
+**[Best Practices Guide](BEST_PRACTICES.md)**
+- Strategy design principles
+- Backtesting methodologies
+- Risk management techniques
+- Portfolio optimization
+- Common mistakes to avoid
+- Performance monitoring
+- Advanced techniques
+
+**[FAQ](FAQ.md)**
+- Getting started questions
+- Strategy & backtesting
+- Risk management
+- Trading operations
+- Technical issues
+- Account settings
+- Support & community
+
+### For Developers
+
+**[CLAUDE.md](CLAUDE.md)**
+- Project architecture
+- Development setup
+- Package structure
+- Algorithm engine details
+- Database schema
+- Deployment instructions
+- Testing guidelines
+
 ## Contributing
 
-_Contribution guidelines will be added as the project matures_
+We welcome contributions! Please:
+
+1. Check existing [GitHub Issues](https://github.com/your-repo/stock-picker/issues)
+2. Fork the repository
+3. Create a feature branch
+4. Follow code style guidelines in CLAUDE.md
+5. Add tests for new features
+6. Submit a pull request
+
+## Support
+
+- **Documentation**: Start with [User Guide](USER_GUIDE.md) or [FAQ](FAQ.md)
+- **Bug Reports**: [GitHub Issues](https://github.com/your-repo/stock-picker/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/your-repo/stock-picker/discussions)
+- **Questions**: Check [FAQ](FAQ.md) first, then GitHub Discussions
 
 ## License
 
